@@ -9,8 +9,8 @@ import {
   FileEdit,
   PlusCircle,
   CheckCircle2,
-  Calendar,
-  MessageSquare,
+  AlertTriangle,
+  X,
 } from 'lucide-react';
 import type { InternshipPeriod, LogbookEntry, AttendanceStatus } from '../types';
 import { ServerClock } from '../components/ServerClock';
@@ -63,12 +63,13 @@ export const AttendancePage: React.FC<AttendancePageProps> = ({
   const calendarDays: (CalDay | null)[] = useMemo(() => {
     const days: (CalDay | null)[] = [];
 
-    // Periode 2: Sep 10 - Oct 9 (3 padding cells for Thu start)
+    // For Periode 2 (10 Sep 2026 - 9 Okt 2026):
+    // 3 empty cells before Thu (Sen, Sel, Rab)
     for (let i = 0; i < 3; i++) {
       days.push(null);
     }
 
-    // Days 10 to 30 Sep
+    // 10 to 30 Sep
     for (let d = 10; d <= 30; d++) {
       const dateStr = `2026-09-${d.toString().padStart(2, '0')}`;
       const dateObj = new Date(2026, 8, d);
@@ -98,7 +99,7 @@ export const AttendancePage: React.FC<AttendancePageProps> = ({
       });
     }
 
-    // Days 1 to 9 Oct
+    // 1 to 9 Oct
     for (let d = 1; d <= 9; d++) {
       const dateStr = `2026-10-${d.toString().padStart(2, '0')}`;
       const dateObj = new Date(2026, 9, d);
@@ -128,44 +129,26 @@ export const AttendancePage: React.FC<AttendancePageProps> = ({
     return days;
   }, [entries, todayDate]);
 
-  const renderStatusBadge = (status: AttendanceStatus) => {
+  const renderStatusIcon = (status: AttendanceStatus) => {
     switch (status) {
       case 'hadir_disetujui':
-        return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200/60">
-            <Check className="w-2.5 h-2.5 stroke-[3]" /> Hadir
-          </span>
-        );
+        return <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />;
       case 'izin_disetujui':
-        return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 text-[10px] font-bold border border-teal-200/60">
-            <Minus className="w-2.5 h-2.5 stroke-[3]" /> Izin
-          </span>
-        );
+        return <Minus className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />;
       case 'tidak_hadir':
-        return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-bold border border-rose-200/60">
-            Alpha
-          </span>
-        );
+        return <div className="w-2.5 h-2.5 rounded-full bg-red-600" />;
+      case 'kehadiran_ditolak':
+        return <X className="w-3.5 h-3.5 text-red-600 stroke-[3]" />;
+      case 'perlu_tindakan':
+        return <AlertTriangle className="w-3 h-3 text-amber-500 fill-amber-500" />;
       case 'menunggu_mentor':
-        return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200/60">
-            Review
-          </span>
-        );
+        return <div className="w-2.5 h-2.5 bg-blue-600 rotate-45" />;
       case 'hari_libur':
       case 'libur_posisi':
-        return (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-400 text-[10px] font-medium">
-            Libur
-          </span>
-        );
+        return <div className="w-2.5 h-2.5 bg-slate-700 rounded-2xs" />;
       case 'belum_diisi':
       default:
-        return (
-          <span className="w-2 h-2 rounded-full border border-slate-300 inline-block" />
-        );
+        return <div className="w-2.5 h-2.5 rounded-full border border-slate-300" />;
     }
   };
 
@@ -173,7 +156,6 @@ export const AttendancePage: React.FC<AttendancePageProps> = ({
     try {
       const d = new Date(dateStr);
       return new Intl.DateTimeFormat('id-ID', {
-        weekday: 'long',
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -184,61 +166,61 @@ export const AttendancePage: React.FC<AttendancePageProps> = ({
   };
 
   return (
-    <div className="space-y-5 pb-20 fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Presensi & Kalender Aktivitas
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Kelola rekam jejak kehadiran harian dan riwayat verifikasi mentor.
-          </p>
-        </div>
+    <div className="space-y-4 pb-20 fade-in">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+          Riwayat Kehadiran
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500">
+          Lihat catatan kehadiran dan laporan harian Anda.
+        </p>
+      </div>
 
-        {/* Quick Period Selector Pill */}
-        <div className="inline-flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-2xs self-start sm:self-auto">
+      {/* Calendar Card */}
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-xs overflow-hidden">
+        {/* Period Navigation */}
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <button
             onClick={handlePrevPeriod}
             disabled={selectedPeriodIndex === 0}
-            className="p-1.5 rounded-xl hover:bg-slate-100 disabled:opacity-30 transition-colors"
+            className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
           >
-            <ChevronLeft className="w-4 h-4 text-slate-600" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
-          <div className="px-3 text-center">
-            <span className="text-xs font-bold text-slate-800">{currentPeriod.name}</span>
-            <span className="text-[10px] text-slate-400 block font-mono">
+
+          <div className="text-center">
+            <h3 className="font-bold text-slate-900 text-sm">{currentPeriod.name}</h3>
+            <p className="text-[11px] text-slate-500 font-mono">
               {currentPeriod.startDate} - {currentPeriod.endDate}
-            </span>
+            </p>
           </div>
+
           <button
             onClick={handleNextPeriod}
             disabled={selectedPeriodIndex === periods.length - 1}
-            className="p-1.5 rounded-xl hover:bg-slate-100 disabled:opacity-30 transition-colors"
+            className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
           >
-            <ChevronRight className="w-4 h-4 text-slate-600" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-      </div>
 
-      {/* Main Interactive Calendar Card */}
-      <div className="rounded-3xl bg-white border border-slate-200/90 shadow-sm overflow-hidden">
         {/* Days of Week Header */}
-        <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/70 py-2.5 text-center text-xs font-bold text-slate-600">
+        <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/30 text-center py-2 text-xs font-semibold text-slate-600">
           <div>Sen</div>
           <div>Sel</div>
           <div>Rab</div>
           <div>Kam</div>
           <div>Jum</div>
-          <div className="text-indigo-400">Sab</div>
-          <div className="text-indigo-400">Min</div>
+          <div className="text-slate-400">Sab</div>
+          <div className="text-slate-400">Min</div>
         </div>
 
         {/* Calendar Day Grid */}
-        <div className="grid grid-cols-7 divide-y divide-x divide-slate-100/90 text-center">
+        <div className="grid grid-cols-7 divide-y divide-x divide-slate-100 text-center text-xs">
           {calendarDays.map((day, idx) => {
             if (!day) {
-              return <div key={`empty-${idx}`} className="h-20 bg-slate-50/30" />;
+              return <div key={`empty-${idx}`} className="h-16 bg-slate-50/20" />;
             }
 
             const isSelected = day.fullDate === selectedDate;
@@ -248,153 +230,144 @@ export const AttendancePage: React.FC<AttendancePageProps> = ({
               <button
                 key={day.fullDate}
                 onClick={() => setSelectedDate(day.fullDate)}
-                className={`h-20 p-2 flex flex-col items-center justify-between transition-all cursor-pointer relative ${
+                className={`h-16 p-1.5 flex flex-col items-center justify-between transition-colors cursor-pointer relative ${
                   isSelected
-                    ? 'bg-indigo-50/80 ring-2 ring-indigo-600 ring-inset z-10'
+                    ? 'bg-blue-50/80 ring-2 ring-blue-500 ring-inset z-10'
                     : 'hover:bg-slate-50 bg-white'
                 }`}
               >
-                {/* Date number */}
-                <div className="flex items-center justify-between w-full">
-                  <span
-                    className={`w-6 h-6 flex items-center justify-center rounded-lg text-xs font-bold transition-transform ${
-                      isToday
-                        ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30'
-                        : isSelected
-                        ? 'text-indigo-900 font-extrabold'
-                        : day.isWeekend
-                        ? 'text-slate-400'
-                        : 'text-slate-700'
-                    }`}
-                  >
-                    {day.dayNumber}
-                  </span>
-                  {isToday && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
-                  )}
-                </div>
+                <span
+                  className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-semibold ${
+                    isToday
+                      ? 'bg-blue-600 text-white font-bold'
+                      : day.isWeekend
+                      ? 'text-slate-400'
+                      : 'text-slate-700'
+                  }`}
+                >
+                  {day.dayNumber}
+                </span>
 
-                {/* Status Badge */}
-                <div className="w-full flex justify-center">{renderStatusBadge(day.status)}</div>
+                <div className="h-5 flex items-center justify-center">
+                  {renderStatusIcon(day.status)}
+                </div>
               </button>
             );
           })}
         </div>
 
-        {/* Legend Bar */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/40 text-[11px] text-slate-600">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-            <span className="flex items-center gap-1.5 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Hadir Disetujui
+        {/* Legend matching clean standards */}
+        <div className="p-3.5 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-600">
+          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
+            <span className="flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" /> Hadir disetujui
             </span>
-            <span className="flex items-center gap-1.5 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block" /> Izin Resmi
+            <span className="flex items-center gap-1.5">
+              <Minus className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" /> Izin disetujui
             </span>
-            <span className="flex items-center gap-1.5 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" /> Menunggu Mentor
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block" /> Tidak Hadir
             </span>
-            <span className="flex items-center gap-1.5 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" /> Tidak Hadir
+            <span className="flex items-center gap-1.5">
+              <X className="w-3.5 h-3.5 text-red-600 stroke-[3]" /> Kehadiran Ditolak
             </span>
-            <span className="flex items-center gap-1.5 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block" /> Hari Libur
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3 h-3 text-amber-500 fill-amber-500" /> Perlu Tindakan Anda
+            </span>
+            <span className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 bg-blue-600 rotate-45 inline-block" /> Menunggu Tindakan Mentor
+            </span>
+            <span className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full border border-slate-300 inline-block" /> Belum Diisi
+            </span>
+            <span className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 bg-slate-700 rounded-2xs inline-block" /> Hari Libur
             </span>
           </div>
         </div>
       </div>
 
-      {/* Selected Day Logbook Note Card */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      {/* Selected Day Card */}
+      <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
-              Detail Rekam Logbook
-            </span>
-            <h2 className="text-base sm:text-lg font-black text-slate-900">
-              {formatHeaderDate(selectedDate)}
+            <h2 className="text-base font-bold text-slate-900">
+              {selectedDateEntry ? 'Laporan' : 'Tambah laporan'} · {formatHeaderDate(selectedDate)}
             </h2>
           </div>
 
           {selectedDateEntry ? (
             <button
               onClick={() => onOpenLogbookForm(selectedDate, selectedDateEntry)}
-              className="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <FileEdit className="w-3.5 h-3.5" />
-              Perbarui Laporan
+              Edit Laporan
             </button>
           ) : (
             <button
               onClick={() => onOpenLogbookForm(selectedDate)}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-indigo-600/25 transition-all hover:scale-[1.02] cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <PlusCircle className="w-3.5 h-3.5" />
-              Isi Laporan Tanggal Ini
+              Isi Laporan
             </button>
           )}
         </div>
 
         {selectedDateEntry ? (
-          <div className="space-y-4">
-            {/* Status bar */}
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
+          <div className="space-y-3">
+            {/* Metadata bar */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-600 text-white shadow-2xs">
+                <span className="font-semibold px-2.5 py-0.5 rounded bg-blue-100 text-blue-800">
                   {selectedDateEntry.attendanceType}
                 </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  Dikirim: {selectedDateEntry.submittedAt}
-                </span>
+                <span className="text-slate-500">Diserahkan: {selectedDateEntry.submittedAt}</span>
               </div>
-              <div className="flex items-center gap-1 text-xs">
+              <div>
                 {selectedDateEntry.status === 'hadir_disetujui' ? (
-                  <span className="font-bold text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <span className="font-semibold text-emerald-700 flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Disetujui Mentor
                   </span>
                 ) : (
-                  <span className="font-bold text-indigo-700 flex items-center gap-1 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                    <Clock className="w-3.5 h-3.5" /> Menunggu Review
+                  <span className="font-semibold text-blue-700 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" /> Menunggu Tindakan Mentor
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Location pill */}
+            {/* GPS Location Tag */}
             {selectedDateEntry.location && (
-              <div className="text-xs text-slate-600 flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200">
-                <MapPin className="w-4 h-4 text-indigo-600 shrink-0" />
+              <div className="text-xs text-slate-600 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200">
+                <MapPin className="w-3.5 h-3.5 text-blue-600" />
                 <span>
-                  <strong>Koordinat Terverifikasi:</strong> {selectedDateEntry.location.address} (
+                  <strong>Lokasi:</strong> {selectedDateEntry.location.address} (
                   {selectedDateEntry.location.latitude}, {selectedDateEntry.location.longitude})
                 </span>
               </div>
             )}
 
-            {/* Activity blocks */}
-            <div className="grid grid-cols-1 gap-3">
-              <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-1">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Uraian Aktivitas & Capaian:
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+            {/* 3 Columns content */}
+            <div className="space-y-2.5 text-xs sm:text-sm">
+              <div className="p-3 rounded-xl border border-slate-200 bg-white">
+                <h4 className="font-bold text-slate-800 mb-1">Uraian aktivitas</h4>
+                <p className="text-slate-600 leading-relaxed whitespace-pre-line">
                   {selectedDateEntry.activityDescription}
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-1">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Pembelajaran Teknis:
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+              <div className="p-3 rounded-xl border border-slate-200 bg-white">
+                <h4 className="font-bold text-slate-800 mb-1">Pembelajaran yang diperoleh</h4>
+                <p className="text-slate-600 leading-relaxed whitespace-pre-line">
                   {selectedDateEntry.learnings}
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-1">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Kendala & Solusi:
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+              <div className="p-3 rounded-xl border border-slate-200 bg-white">
+                <h4 className="font-bold text-slate-800 mb-1">Kendala yang dialami</h4>
+                <p className="text-slate-600 leading-relaxed whitespace-pre-line">
                   {selectedDateEntry.challenges}
                 </p>
               </div>
@@ -402,37 +375,20 @@ export const AttendancePage: React.FC<AttendancePageProps> = ({
 
             {/* Mentor feedback */}
             {selectedDateEntry.mentorFeedback && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 flex items-start gap-3">
-                <MessageSquare className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-amber-950">Catatan Masukan Mentor:</div>
-                  <p className="text-xs sm:text-sm text-amber-900 italic leading-relaxed">
-                    &ldquo;{selectedDateEntry.mentorFeedback}&rdquo;
-                  </p>
-                  <span className="text-[10px] text-amber-700 font-mono block">
-                    Ditinjau pada: {selectedDateEntry.mentorApprovedAt}
-                  </span>
-                </div>
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs">
+                <div className="font-bold text-amber-900 mb-0.5">Catatan Mentor:</div>
+                <p className="text-amber-800 italic">&ldquo;{selectedDateEntry.mentorFeedback}&rdquo;</p>
               </div>
             )}
           </div>
         ) : (
-          <div className="py-8 text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-800 text-sm">Belum Ada Laporan Aktivitas</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mt-0.5">
-                Pilih tanggal kerja untuk merekam tugas harian atau melihat riwayat yang sudah disetujui.
-              </p>
-            </div>
+          <div className="py-6 text-center space-y-2 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+            <p className="text-xs text-slate-500">Belum ada laporan untuk tanggal ini.</p>
             <button
               onClick={() => onOpenLogbookForm(selectedDate)}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-sm shadow-indigo-600/20 transition-all hover:scale-[1.02]"
+              className="text-xs font-semibold text-blue-600 hover:underline cursor-pointer"
             >
-              <PlusCircle className="w-3.5 h-3.5" />
-              Mulai Tulis Laporan
+              Mulai isi laporan harian &rarr;
             </button>
           </div>
         )}
