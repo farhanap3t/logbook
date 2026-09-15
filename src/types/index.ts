@@ -128,3 +128,4 @@ export interface Announcement {
   content: string;
   isNew: boolean;
 }
+

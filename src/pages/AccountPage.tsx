@@ -13,7 +13,7 @@ import {
 import type { UserProfile } from '../types';
 import { ServerClock } from '../components/ServerClock';
 import { ResignationModal } from '../components/ResignationModal';
-import { UserGuideModal } from '../components/UserGuideModal';
+import { UserGuidePage } from './UserGuidePage';
 
 interface AccountPageProps {
   profile: UserProfile;
@@ -27,12 +27,16 @@ export const AccountPage: React.FC<AccountPageProps> = ({
   onExportData,
 }) => {
   const [showResignModal, setShowResignModal] = useState(false);
-  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [isViewingGuide, setIsViewingGuide] = useState(false);
   const [logoutAlert, setLogoutAlert] = useState(false);
 
   const handlePrint = () => {
     window.print();
   };
+
+  if (isViewingGuide) {
+    return <UserGuidePage onBack={() => setIsViewingGuide(false)} />;
+  }
 
   return (
     <div className="space-y-4 pb-20 fade-in">
@@ -171,7 +175,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({
 
       {/* Card Panduan Pengguna */}
       <div
-        onClick={() => setShowGuideModal(true)}
+        onClick={() => setIsViewingGuide(true)}
         className="p-4 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 flex items-center justify-between cursor-pointer transition-colors group"
       >
         <div className="flex items-center gap-3">
@@ -235,8 +239,6 @@ export const AccountPage: React.FC<AccountPageProps> = ({
         userName={profile.name}
         companyName={profile.company}
       />
-
-      <UserGuideModal isOpen={showGuideModal} onClose={() => setShowGuideModal(false)} />
 
       {/* Footer Clock */}
       <div className="pt-2 text-center">
