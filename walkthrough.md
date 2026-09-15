@@ -57,7 +57,12 @@ Aplikasi web logbook aktivitas magang telah berhasil dibangun dengan arsitektur 
 - **Cetak Laporan Logbook Resmi (PDF/Print)**:
   - Format cetak formal standar buku logbook magang lengkap dengan Kop BSI, identitas mahasiswa/kampus, tabel rekapitulasi harian, dan kolom tanda tangan (Peserta, Pembimbing Kampus, dan Mentor Lapangan).
 - **Pengunduran Diri**: Alur resmi pengajuan pengunduran diri dengan alasan, tanggal efektif, dan unggah surat.
-- **Panduan Pengguna**: Petunjuk aturan 23:59 WIB, ketentuan 100 karakter, dan kebijakan izin.
+- **Panduan Pengguna Interaktif (Lengkap & Terstruktur)**:
+  - Selector peran (*Peserta* / *Mentor Lapangan*).
+  - Kolom pencarian real-time topik panduan (*"Cari panduan..."*).
+  - Pilihan dropdown topik (*Mulai di sini*, *Laporan Harian*, *Riwayat Kehadiran*, *Perkembangan & Benefit*, *Dokumen & Akun*).
+  - Tombol aksi: *Panduan Lengkap* dan *Unduh PDF*.
+  - Navigasi paginasi topik (*Sebelumnya ←* dan *Berikutnya →*).
 - **Manajemen Data**: Cadangkan data ke file JSON atau pulihkan ke data demo awal.
 - **Mode Tampilan**: Tombol toggle untuk beralih antara tampilan responsif desktop dan bingkai simulasi smartphone.
 
