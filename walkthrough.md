@@ -1,112 +1,52 @@
-# Walkthrough: Aplikasi Web Logbook Magang (Monev BSI) Siap Online di GitHub Pages
+# Walkthrough: Logbook — Platform Pemantauan & Presensi Magang Modern
 
-Aplikasi web logbook aktivitas magang telah berhasil dibangun dengan arsitektur modern (React + TypeScript + Vite + Tailwind CSS v4). Seluruh modul yang ada pada 10 gambar referensi telah diimplementasikan secara komprehensif tanpa duplikasi dangkal (*bukan AI slop*), dilengkapi fungsionalitas riil seperti GPS geolocation browser, validasi batas 100 karakter, kurikulum, matrix evaluasi mentor, rincian uang saku, pencetakan format resmi PDF, serta workflow auto-deploy ke **GitHub Pages**.
+Aplikasi telah berhasil dirombak total menjadi platform **"Logbook"** yang universal (terlepas dari branding spesifik BSI) dengan tampilan antarmuka (*UI/UX*) modern berestetika SaaS profesional (mengadopsi *design system* ala Linear, Vercel, dan Raycast: glassmorphism, palet indigo-slate, progress meter dinamis, dan visualisasi metrik eksekutif).
 
----
-
-## Ringkasan Fitur yang Telah Dibangun
-
-### 1. 🏠 Beranda (Dashboard Utama)
-- **Header Profil**: Menyapa nama peserta magang (*MUHAMMAD FARHAN*), instansi (*PT. Bank Syariah Indonesia Tbk*), avatar, dan indikator status aktif.
-- **Pemberitahuan Kebijakan Cuti & Izin**: Banner interaktif yang menjelaskan aturan 3 hari izin berbayar per periode.
-- **Pusat Pengumuman**: Modal notifikasi dengan kategori penting, filter baru, serta detail pengumuman.
-- **Kartu "Hari Ini"**:
-  - Deteksi otomatis apakah laporan hari ini sudah diisi atau belum.
-  - Peringatan batas waktu pengisian pukul **23.59 WIB**.
-  - Tombol CTA langsung menuju form pengisian harian.
-- **Jam Server Real-Time**: Komponen waktu server Indonesia (WIB / GMT+7) yang berdetik setiap detik secara langsung.
-- **Kartu Statistik**: Rekap kehadiran disetujui (20 hari), izin berbayar (1 hari), nilai evaluasi (3.3 / 4.0), dan status pengajuan uang saku (100%).
-
-### 2. 📅 Riwayat Kehadiran & Kalender Interaktif
-- **Navigasi Periode Magang**: Mendukung perpindahan antar periode (Periode 1 s/d Periode 6).
-- **Kalender Presensi**:
-  - Grid tanggal Sen s/d Min dengan penanda status: *Hadir disetujui*, *Izin disetujui*, *Tidak hadir*, *Kehadiran ditolak*, *Perlu tindakan*, *Menunggu tindakan mentor*, *Belum diisi*, dan *Hari libur*.
-  - Pemilihan tanggal interaktif.
-- **Panel Detail Tanggal Terpilih**:
-  - Menampilkan ringkasan laporan, timestamp penyerahan, lokasi GPS kantor, dan catatan evaluasi langsung dari mentor.
-  - Tombol untuk mengisi laporan jika tanggal belum memiliki entri.
-
-### 3. 📝 Formulir Laporan Harian Terstandarisasi
-- **Verifikasi Lokasi GPS**: Menggunakan API `navigator.geolocation` untuk mendeteksi koordinat aktual dan fallback lokasi kantor BSI.
-- **Pilihan Presensi**: *Hadir (WFO)*, *Hadir (WFH)*, *Izin*, *Sakit*, dan *Dinas Luar*.
-- **Validasi Kualitas Deskripsi (Minimal 100 Karakter)**:
-  - *Uraian Aktivitas*: Counter karakter real-time + progress badge (merah jika <100 karakter, hijau jika >=100 karakter).
-  - *Pembelajaran yang Diperoleh*: Minimal 100 karakter.
-  - *Kendala yang Dialami & Solusi*: Minimal 100 karakter.
-- **Unggah Foto Kegiatan**: Peserta dapat melampirkan dokumentasi aktivitas harian yang disimpan ke local storage.
-- **Autosave Draft**: Draf pengisian otomatis disimpan di browser agar tidak hilang jika form tidak sengaja tertutup.
-- **Pernyataan Konfirmasi & Confetti Celebration**: Efek visual konfeti saat pengiriman berhasil.
-
-### 4. 📈 Perkembangan Magang
-- **Kurikulum & Modul**:
-  - Modul *Performance Evaluation, Feedback & Teamwork* dan *Problem Solving in Action & Reporting Skills*.
-  - Label tipe kegiatan (*Praktik*, *Teori*), durasi, deskripsi kompetensi, serta kotak arahan khusus *Fokus Pembelajaran* per periode.
-- **Evaluasi Bulanan**:
-  - Status review mentor (*Selesai* oleh *Zaim Nur Afif*).
-  - Matrix 8 aspek penilaian (*Kehadiran*, *Sikap*, *Komunikasi*, *Inisiatif*, *Adaptasi*, *Pengetahuan Teknis*, *Produktivitas*, *Kerja Sama*) dengan skala SB, B, C, K.
-  - Capaian evaluasi kurikulum dan catatan masukan kualitatif mentor.
-- **Transparansi Perhitungan Uang Saku**:
-  - Status pengajuan pembayaran uang saku oleh mentor.
-  - Rekapitulasi hari dibayar (e.g. 21 dari 21 hari = 100%).
-  - Breakdown komprehensif hari kerja vs libur nasional & libur posisi.
-  - Informasi rekening penerima terenkripsi (*PT. Bank Syariah Indonesia Tbk*, no. rekening ter-masking, nama pemilik).
-- **Survei Magang**: Status indikator survei yang akan aktif di periode akhir.
-
-### 5. 👤 Akun Peserta & Dokumen Resmi
-- Informasi lengkap peserta, posisi *Junior IT Intern*, lokasi penempatan Jakarta Selatan, kontak darurat, dan mentor pembimbing.
-- **Cetak Laporan Logbook Resmi (PDF/Print)**:
-  - Format cetak formal standar buku logbook magang lengkap dengan Kop BSI, identitas mahasiswa/kampus, tabel rekapitulasi harian, dan kolom tanda tangan (Peserta, Pembimbing Kampus, dan Mentor Lapangan).
-- **Pengunduran Diri**: Alur resmi pengajuan pengunduran diri dengan alasan, tanggal efektif, dan unggah surat.
-- **Panduan Pengguna Interaktif (Lengkap & Terstruktur)**:
-  - Selector peran (*Peserta* / *Mentor Lapangan*).
-  - Kolom pencarian real-time topik panduan (*"Cari panduan..."*).
-  - Pilihan dropdown topik (*Mulai di sini*, *Laporan Harian*, *Riwayat Kehadiran*, *Perkembangan & Benefit*, *Dokumen & Akun*).
-  - Tombol aksi: *Panduan Lengkap* dan *Unduh PDF*.
-  - Navigasi paginasi topik (*Sebelumnya ←* dan *Berikutnya →*).
-- **Manajemen Data**: Cadangkan data ke file JSON atau pulihkan ke data demo awal.
-- **Mode Tampilan**: Tombol toggle untuk beralih antara tampilan responsif desktop dan bingkai simulasi smartphone.
+Aplikasi terhubung langsung ke repository GitHub dan otomatis dideploy ke **GitHub Pages**.
 
 ---
 
-## Verifikasi & Pengujian yang Dilakukan
+## Ringkasan Perombakan & Fitur Baru
 
-1. **Build Kompilasi**:
-   - Menjalankan `npm run build`: Berhasil tanpa error TypeScript (`tsc -b`) dan bundel Vite selesai dalam 458ms.
-   - Ukuran aset: JS terkompresi ~98 kB gzip, CSS ~8.8 kB gzip.
-2. **Konfigurasi Path Relatif**:
-   - `vite.config.ts` diatur dengan `base: './'` sehingga semua tautan CSS/JS/aset tidak akan mengalami error 404 pada URL subdirectory GitHub Pages (`https://<username>.github.io/<repo>/`).
-3. **Repository Git Lokal**:
-   - Repository git lokal telah diinisialisasi pada branch `main`.
-   - Initial commit telah dibuat (`feat: inisialisasi aplikasi web logbook magang bsi monev`).
-   - Workflow GitHub Actions (`.github/workflows/deploy.yml`) telah disertakan dan siap otomatis bekerja saat di-push.
+### 1. 🌟 Rebranding Universal
+- **Nama Aplikasi**: Menjadi **Logbook Workspace** (bukan lagi Monev BSI).
+- **Profil Perusahaan**: Menjadi *PT Inovasi Digital Nusantara* (dan dapat dikonfigurasi fleksibel di profil peserta).
+- **Judul & Metadata**: Diperbarui di `index.html` dan seluruh dokumen cetak resmi.
+
+### 2. 🎨 Perombakan Antarmuka (Modern UI Redesign)
+- **Top Navigation Bar**:
+  - Logo gradien modern dengan chip status *"Workspace"*.
+  - Segmented control pills untuk navigasi desktop yang halus.
+  - Floating bottom bar mobile bergaya *dark glassmorphism* dengan backdrop blur.
+  - Widget jam server dengan *live sync pulse* neon hijau.
+- **Dashboard (Beranda) Berestetika Tinggi**:
+  - **Dark Hero Card**: Sambutan dengan latar belakang gradien slate-indigo yang elegan, indikator status magang aktif, serta ringkasan metrik 4 kuadran (Kehadiran, Izin Berbayar, Evaluasi Mentor, dan Rasio Uang Saku).
+  - **Kartu Catatan Hari Ini**: Desain modern terpadu dengan countdown pengingat batas pengisian 23:59 WIB dan tombol gradien interaktif.
+  - **Banner Kebijakan & Notifikasi**: Accordion chip yang bersih dan hemat ruang.
+- **Presensi & Kalender Interaktif**:
+  - Tanggal dengan indikator visual *modern badge pills* (Hadir, Izin, Alpha, Review, Libur).
+  - Highlight tanggal aktif dengan border ring indigo.
+  - Kartu catatan harian (*note card*) dengan pin lokasi GPS, kutipan masukan mentor, dan tombol edit laporan.
+- **Formulir Laporan Harian Modern**:
+  - Pemindai GPS dengan tombol *refresh* lokasi seketika.
+  - **Dynamic Character Meter Bars**: Progress bar responsif (berubah warna dari merah &rarr; amber &rarr; hijau) saat mengetik menuju minimal 100 karakter pada ketiga bagian wajib.
+  - Lampiran foto/dokumentasi kegiatan dengan drag-and-drop uploader.
+  - Efek konfeti saat pengiriman sukses.
+- **Perkembangan & Kompetensi**:
+  - Segmented pill navigation (*Evaluasi Mentor*, *Kurikulum*, *Uang Saku*, *Survei*).
+  - **Evaluasi Mentor**: Executive score card (skor 3.5 / 4.0) dengan *competency progress bars* per aspek penilaian dan kartu kutipan mentor ber-avatar.
+  - **Uang Saku**: Kartu bergaya *fintech dashboard* dengan visual rasio hari dibayar dan rekening penerima.
+- **Profil & Dokumen Resmi**:
+  - Kartu *Passport ID* modern dengan rincian kampus dan kontak.
+  - Tombol **Cetak Dokumen Logbook Resmi** (menghasilkan lembar pengesahan dan tabel rekapitulasi formal siap PDF).
+  - Integrasi halaman **Panduan Pengguna (Knowledge Base)** interaktif dengan pencarian instan dan unduh PDF.
 
 ---
 
-## Panduan Langkah Menghubungkan ke GitHub & Meng-online-kan
+## Status Deployment GitHub Pages
 
-Ikuti 3 langkah mudah berikut untuk menghubungkan ke GitHub Anda:
+- **Branch**: `main`
+- **Workflow**: `.github/workflows/deploy.yml`
+- **Alamat Online**: [https://farhanap3t.github.io/logbook/](https://farhanap3t.github.io/logbook/)
 
-### 1. Buat Repository Baru di GitHub
-1. Buka browser dan login ke [GitHub](https://github.com/new).
-2. Isi **Repository name** (misalnya: `logbook-magang` atau `bsi-monev`).
-3. Biarkan visibilitas **Public**.
-4. **JANGAN** centang *"Add a README file"* (karena proyek lokal sudah memiliki file README lengkap).
-5. Klik **Create repository**.
-
-### 2. Hubungkan & Push dari Terminal
-Jalankan perintah berikut di terminal (ganti `USERNAME_ANDA` dan `NAMA_REPO` dengan akun Anda):
-
-```bash
-git remote add origin https://github.com/USERNAME_ANDA/NAMA_REPO.git
-git push -u origin main
-```
-
-### 3. Aktifkan GitHub Pages di Repository
-1. Pada repository GitHub Anda, klik tab **Settings** di menu atas.
-2. Di sidebar sebelah kiri, klik menu **Pages**.
-3. Pada opsi **Build and deployment** > **Source**, ubah dari *Deploy from a branch* menjadi **GitHub Actions**.
-4. Selesai! GitHub Actions akan otomatis menjalankan build dan aplikasi Anda akan aktif dalam 1-2 menit di:
-   ```text
-   https://USERNAME_ANDA.github.io/NAMA_REPO/
-   ```
-
+Setiap kali perubahan di-push ke branch `main`, GitHub Actions akan otomatis melakukan kompilasi dan memperbarui web online dalam 1–2 menit.

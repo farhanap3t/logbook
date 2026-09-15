@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import {
   BookOpen,
-  FileCheck,
   Wallet,
   ClipboardCheck,
   ChevronRight,
   ChevronLeft,
-  ArrowLeft,
-  CheckCircle2,
-  Building,
-  CreditCard,
-  Sparkles,
+  Award,
+  MessageSquareQuote,
 } from 'lucide-react';
 import type {
   InternshipPeriod,
@@ -20,7 +16,7 @@ import type {
 } from '../types';
 import { ServerClock } from '../components/ServerClock';
 
-type SubViewType = 'menu' | 'kurikulum' | 'evaluasi' | 'uang_saku' | 'survei';
+type SubViewType = 'kurikulum' | 'evaluasi' | 'uang_saku' | 'survei';
 
 interface ProgressPageProps {
   periods: InternshipPeriod[];
@@ -37,10 +33,9 @@ export const ProgressPage: React.FC<ProgressPageProps> = ({
   evaluations,
   stipends,
 }) => {
-  const [subView, setSubView] = useState<SubViewType>('menu');
+  const [subView, setSubView] = useState<SubViewType>('evaluasi');
   const [selectedPeriodId, setSelectedPeriodId] = useState<number>(currentPeriodId);
 
-  // Period navigation helper
   const periodIndex = periods.findIndex((p) => p.id === selectedPeriodId);
   const currentPeriodObj = periods[periodIndex] || periods[0];
 
@@ -52,699 +47,391 @@ export const ProgressPage: React.FC<ProgressPageProps> = ({
     if (periodIndex < periods.length - 1) setSelectedPeriodId(periods[periodIndex + 1].id);
   };
 
-  // Filtered data
   const periodCurriculums = curriculums.filter((c) => c.periodId === selectedPeriodId);
   const periodEvaluation = evaluations.find((e) => e.periodId === selectedPeriodId);
   const periodStipend = stipends.find((s) => s.periodId === selectedPeriodId);
 
-  // ====================== SUB-VIEW: KURIKULUM ======================
-  if (subView === 'kurikulum') {
-    return (
-      <div className="space-y-4 pb-20 fade-in">
-        {/* Header with back */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSubView('menu')}
-            className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Kurikulum</h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Lihat materi dan fokus pembelajaran untuk setiap periode magang.
-            </p>
-          </div>
+  return (
+    <div className="space-y-5 pb-20 fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            Perkembangan & Kompetensi
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">
+            Pantau capaian silabus, penilaian performa berkala, dan transparansi benefit magang.
+          </p>
         </div>
 
-        {/* Period Selector */}
-        <div className="rounded-2xl bg-white border border-slate-200 p-3 flex items-center justify-between shadow-2xs">
+        {/* Period Selector Pill */}
+        <div className="inline-flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-2xs self-start sm:self-auto">
           <button
             onClick={handlePrevPeriod}
             disabled={periodIndex === 0}
-            className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30"
+            className="p-1.5 rounded-xl hover:bg-slate-100 disabled:opacity-30 transition-colors"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4 text-slate-600" />
           </button>
-          <div className="text-center">
-            <h4 className="font-bold text-slate-800 text-sm">{currentPeriodObj.name}</h4>
-            <p className="text-[11px] text-slate-500 font-mono">
+          <div className="px-3 text-center">
+            <span className="text-xs font-bold text-slate-800">{currentPeriodObj.name}</span>
+            <span className="text-[10px] text-slate-400 block font-mono">
               {currentPeriodObj.startDate} - {currentPeriodObj.endDate}
-            </p>
+            </span>
           </div>
           <button
             onClick={handleNextPeriod}
             disabled={periodIndex === periods.length - 1}
-            className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30"
+            className="p-1.5 rounded-xl hover:bg-slate-100 disabled:opacity-30 transition-colors"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 text-slate-600" />
           </button>
         </div>
+      </div>
 
-        {/* Modules List */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-                <BookOpen className="w-5 h-5" />
+      {/* Segmented Tab Bar */}
+      <div className="p-1.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs grid grid-cols-2 sm:grid-cols-4 gap-1">
+        <button
+          onClick={() => setSubView('evaluasi')}
+          className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            subView === 'evaluasi'
+              ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+          }`}
+        >
+          <Award className="w-3.5 h-3.5" />
+          Evaluasi Mentor
+        </button>
+
+        <button
+          onClick={() => setSubView('kurikulum')}
+          className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            subView === 'kurikulum'
+              ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          Kurikulum & Modul
+        </button>
+
+        <button
+          onClick={() => setSubView('uang_saku')}
+          className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            subView === 'uang_saku'
+              ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+          }`}
+        >
+          <Wallet className="w-3.5 h-3.5" />
+          Uang Saku & Benefit
+        </button>
+
+        <button
+          onClick={() => setSubView('survei')}
+          className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            subView === 'survei'
+              ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+          }`}
+        >
+          <ClipboardCheck className="w-3.5 h-3.5" />
+          Survei Program
+        </button>
+      </div>
+
+      {/* ===================== TAB: EVALUASI MENTOR ===================== */}
+      {subView === 'evaluasi' && (
+        <div className="space-y-4">
+          {periodEvaluation ? (
+            <>
+              {/* Executive Score Summary Card */}
+              <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white border border-indigo-900/40 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="space-y-2 text-center sm:text-left">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/10 text-indigo-200 border border-white/10">
+                    Nilai Kinerja {currentPeriodObj.name}
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-white">
+                    Hasil Penilaian Mentor Lapangan
+                  </h3>
+                  <p className="text-xs text-indigo-200/80 max-w-md">
+                    Dievaluasi secara komprehensif oleh <strong>{periodEvaluation.mentorName}</strong> pada{' '}
+                    {periodEvaluation.completedAt}.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center shrink-0 min-w-[140px]">
+                  <div className="text-3xl font-black text-white">{periodEvaluation.overallScore}</div>
+                  <div className="text-[11px] font-semibold text-indigo-200">dari skala 4.0</div>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                    Sangat Baik
+                  </span>
+                </div>
               </div>
-              <h2 className="font-bold text-slate-900 text-base">Kurikulum Magang</h2>
-            </div>
-            <span className="text-xs font-semibold text-slate-500">
-              {periodCurriculums.length} materi
-            </span>
-          </div>
 
-          {periodCurriculums.length > 0 ? (
+              {/* 8 Aspek Penilaian Competency Bars */}
+              <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h4 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                    Matrix 8 Aspek Kompetensi Kerja
+                  </h4>
+                  <div className="flex items-center gap-2 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700">SB: Sangat Baik</span>
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700">B: Baik</span>
+                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700">C: Cukup</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {periodEvaluation.aspects.map((asp) => {
+                    const scoreVal =
+                      asp.score === 'SB' ? 95 : asp.score === 'B' ? 80 : asp.score === 'C' ? 65 : 40;
+                    return (
+                      <div
+                        key={asp.id}
+                        className="p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-2 hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-800">{asp.aspect}</span>
+                          <span
+                            className={`text-xs font-black px-2 py-0.5 rounded-lg ${
+                              asp.score === 'SB'
+                                ? 'bg-indigo-100 text-indigo-800'
+                                : asp.score === 'B'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {asp.score}
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              asp.score === 'SB'
+                                ? 'bg-indigo-600'
+                                : asp.score === 'B'
+                                ? 'bg-emerald-500'
+                                : 'bg-amber-500'
+                            }`}
+                            style={{ width: `${scoreVal}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Capaian Kurikulum & Feedback Note */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3">
+                  <h4 className="font-extrabold text-slate-900 text-sm">Capaian Modul Kurikulum</h4>
+                  <div className="space-y-2">
+                    {periodEvaluation.curriculumAchievements.map((ca, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-between text-xs"
+                      >
+                        <span className="font-semibold text-slate-700">{ca.moduleName}</span>
+                        <span className="font-bold text-indigo-600 px-2 py-0.5 rounded-md bg-indigo-50">
+                          {ca.score}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-200 shadow-sm flex flex-col justify-between space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-amber-950 font-bold text-sm">
+                      <MessageSquareQuote className="w-4 h-4 text-amber-600" />
+                      Catatan Masukan Mentor
+                    </div>
+                    <p className="text-xs sm:text-sm text-amber-900 italic leading-relaxed">
+                      &ldquo;{periodEvaluation.mentorComment}&rdquo;
+                    </p>
+                  </div>
+                  <div className="text-[11px] text-amber-700 font-semibold pt-2 border-t border-amber-200/60 flex items-center justify-between">
+                    <span>{periodEvaluation.mentorName}</span>
+                    <span>Verified ✓</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="p-10 rounded-3xl bg-white border border-slate-200 text-center space-y-2">
+              <Award className="w-10 h-10 text-slate-300 mx-auto" />
+              <h3 className="font-bold text-slate-800 text-sm">Evaluasi Sedang Berlangsung</h3>
+              <p className="text-xs text-slate-500">
+                Mentor lapangan akan menginputkan penilaian kinerja pada akhir siklus periode ini.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===================== TAB: KURIKULUM & MODUL ===================== */}
+      {subView === 'kurikulum' && (
+        <div className="space-y-4">
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base">Silabus & Modul Pembelajaran</h3>
+                  <p className="text-xs text-slate-500">{periodCurriculums.length} modul aktif di {currentPeriodObj.name}</p>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-3">
-              {periodCurriculums.map((mod) => (
+              {periodCurriculums.map((mod, idx) => (
                 <div
                   key={mod.id}
-                  className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/40 space-y-2.5 hover:border-slate-300 transition-colors"
+                  className="p-5 rounded-2xl border border-slate-200/80 bg-slate-50/40 space-y-2.5 hover:border-indigo-200 hover:bg-indigo-50/20 transition-all"
                 >
-                  <div className="flex items-start gap-2.5">
-                    <BookOpen className="w-4 h-4 text-blue-600 mt-1 shrink-0" />
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-sm">{mod.title}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <h4 className="font-bold text-slate-900 text-sm sm:text-base">{mod.title}</h4>
+                      </div>
+                      <div className="flex items-center gap-2 pl-7">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800">
                           {mod.type}
                         </span>
                         <span className="text-xs text-slate-500 font-medium">{mod.month}</span>
                         <span className="text-xs text-slate-400 font-medium">· {mod.duration}</span>
                       </div>
                     </div>
+
+                    {mod.completed && (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                        Tuntas ✓
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs sm:text-[13px] text-slate-600 leading-relaxed pl-6">
+
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pl-7">
                     {mod.description}
                   </p>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-xs text-slate-500 italic py-4 text-center">
-              Belum ada materi kurikulum untuk periode ini.
-            </p>
-          )}
-        </div>
-
-        {/* Fokus Pembelajaran Box */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900 text-sm">Fokus Pembelajaran</h3>
-                <span className="text-[10px] text-slate-400 font-medium">Opsional</span>
-              </div>
-              <p className="text-xs text-slate-500">Arahan pembelajaran khusus untuk periode ini.</p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-500">
-            {selectedPeriodId === 2
-              ? 'Fokus pada pemahaman fault-tolerance sistem pembayaran dan standarisasi pelaporan sprint mingguan.'
-              : 'Belum ada fokus pembelajaran khusus untuk periode ini.'}
           </div>
         </div>
+      )}
 
-        <div className="pt-2 text-center">
-          <ServerClock />
-        </div>
-      </div>
-    );
-  }
-
-  // ====================== SUB-VIEW: EVALUASI BULANAN ======================
-  if (subView === 'evaluasi') {
-    return (
-      <div className="space-y-4 pb-20 fade-in">
-        {/* Header with back */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSubView('menu')}
-            className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Evaluasi Bulanan</h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Lihat hasil penilaian mentor untuk setiap periode magang.
-            </p>
-          </div>
-        </div>
-
-        {/* Period Selector */}
-        <div className="rounded-2xl bg-white border border-slate-200 p-3 flex items-center justify-between shadow-2xs">
-          <button
-            onClick={handlePrevPeriod}
-            disabled={periodIndex === 0}
-            className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div className="text-center">
-            <h4 className="font-bold text-slate-800 text-sm">{currentPeriodObj.name}</h4>
-            <p className="text-[11px] text-slate-500 font-mono">
-              {currentPeriodObj.startDate} - {currentPeriodObj.endDate}
-            </p>
-          </div>
-          <button
-            onClick={handleNextPeriod}
-            disabled={periodIndex === periods.length - 1}
-            className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Evaluation Card */}
-        {periodEvaluation ? (
-          <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-            {/* Header info */}
-            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-start gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 shrink-0 mt-0.5">
-                  <FileCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">Penilaian Mentor</h3>
-                  <p className="text-xs text-slate-500">
-                    Diselesaikan oleh{' '}
-                    <strong className="text-slate-700">{periodEvaluation.mentorName}</strong> pada{' '}
-                    {periodEvaluation.completedAt}
-                  </p>
-                </div>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                {periodEvaluation.status}
-              </span>
-            </div>
-
-            {/* Score Legend */}
-            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs font-semibold text-slate-700 px-4">
-              <span>
-                <strong className="text-blue-600">SB</strong> = Sangat Baik
-              </span>
-              <span>
-                <strong className="text-emerald-600">B</strong> = Baik
-              </span>
-              <span>
-                <strong className="text-amber-600">C</strong> = Cukup
-              </span>
-              <span>
-                <strong className="text-rose-600">K</strong> = Kurang
-              </span>
-            </div>
-
-            {/* Matrix Table */}
-            <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
-              <div className="grid grid-cols-12 bg-slate-50/80 p-2.5 text-xs font-bold text-slate-700 border-b border-slate-200">
-                <div className="col-span-8">Aspek Penilaian</div>
-                <div className="col-span-1 text-center">SB</div>
-                <div className="col-span-1 text-center">B</div>
-                <div className="col-span-1 text-center">C</div>
-                <div className="col-span-1 text-center">K</div>
-              </div>
-
-              <div className="divide-y divide-slate-100 text-xs">
-                {periodEvaluation.aspects.map((asp) => (
-                  <div key={asp.id} className="grid grid-cols-12 p-2.5 items-center hover:bg-slate-50/50">
-                    <div className="col-span-8 font-medium text-slate-800">{asp.aspect}</div>
-                    <div className="col-span-1 text-center font-bold">
-                      {asp.score === 'SB' ? (
-                        <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 inline-flex items-center justify-center font-black">
-                          SB
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">SB</span>
-                      )}
-                    </div>
-                    <div className="col-span-1 text-center font-bold">
-                      {asp.score === 'B' ? (
-                        <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 inline-flex items-center justify-center font-black">
-                          B
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">B</span>
-                      )}
-                    </div>
-                    <div className="col-span-1 text-center font-bold">
-                      {asp.score === 'C' ? (
-                        <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 inline-flex items-center justify-center font-black">
-                          C
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">C</span>
-                      )}
-                    </div>
-                    <div className="col-span-1 text-center font-bold">
-                      {asp.score === 'K' ? (
-                        <span className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 inline-flex items-center justify-center font-black">
-                          K
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">K</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Capaian Kurikulum */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                Capaian Kurikulum
-              </h4>
-              <div className="space-y-1.5">
-                {periodEvaluation.curriculumAchievements.map((ca, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-slate-200/50 last:border-0">
-                    <span className="text-slate-700 font-medium">{ca.moduleName}</span>
-                    <span className="font-bold text-blue-700">{ca.score}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Mentor Comment */}
-            <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 space-y-1">
-              <span className="text-xs font-bold text-amber-950">Komentar Mentor:</span>
-              <p className="text-xs sm:text-sm text-amber-900 leading-relaxed italic">
-                &ldquo;{periodEvaluation.mentorComment}&rdquo;
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="p-8 rounded-3xl bg-white border border-slate-200 text-center space-y-2">
-            <FileCheck className="w-8 h-8 text-slate-400 mx-auto" />
-            <h3 className="font-bold text-slate-800 text-sm">Belum Ada Evaluasi</h3>
-            <p className="text-xs text-slate-500">
-              Evaluasi untuk periode ini sedang berjalan dan akan diisi oleh mentor pada akhir periode.
-            </p>
-          </div>
-        )}
-
-        <div className="pt-2 text-center">
-          <ServerClock />
-        </div>
-      </div>
-    );
-  }
-
-  // ====================== SUB-VIEW: UANG SAKU ======================
-  if (subView === 'uang_saku') {
-    return (
-      <div className="space-y-4 pb-20 fade-in">
-        {/* Header with back */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSubView('menu')}
-            className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Uang Saku</h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Lihat hasil pengajuan pembayaran uang saku dan rincian perhitungannya.
-            </p>
-          </div>
-        </div>
-
-        {/* Period Selector */}
-        <div className="rounded-2xl bg-white border border-slate-200 p-3 flex items-center justify-between shadow-2xs">
-          <button
-            onClick={handlePrevPeriod}
-            disabled={periodIndex === 0}
-            className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div className="text-center">
-            <h4 className="font-bold text-slate-800 text-sm">{currentPeriodObj.name}</h4>
-            <p className="text-[11px] text-slate-500 font-mono">
-              {currentPeriodObj.startDate} - {currentPeriodObj.endDate}
-            </p>
-          </div>
-          <button
-            onClick={handleNextPeriod}
-            disabled={periodIndex === periods.length - 1}
-            className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {periodStipend ? (
-          <div className="space-y-4">
-            {/* Status Banner */}
-            <div
-              className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
-                periodStipend.submissionStatus === 'Diajukan' ||
-                periodStipend.submissionStatus === 'Cair'
-                  ? 'bg-emerald-50 border-emerald-200/90 text-emerald-900'
-                  : 'bg-slate-50 border-slate-200 text-slate-700'
-              }`}
-            >
+      {/* ===================== TAB: UANG SAKU & BENEFIT ===================== */}
+      {subView === 'uang_saku' && periodStipend && (
+        <div className="space-y-4">
+          {/* Fintech Balance Card */}
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white border border-indigo-900/40 shadow-sm space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h4 className="font-bold text-xs sm:text-sm">
-                    {periodStipend.submissionStatus === 'Diajukan'
-                      ? 'Pembayaran uang saku telah diajukan'
-                      : periodStipend.submissionStatus === 'Cair'
-                      ? 'Pembayaran uang saku telah dicairkan'
-                      : 'Pembayaran uang saku belum diajukan'}
-                  </h4>
-                  {periodStipend.submissionStatus === 'Diajukan' && (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  {periodStipend.submissionStatus !== 'Belum Diajukan'
-                    ? `Diajukan oleh Mentor pada ${periodStipend.submittedAt}`
-                    : 'Akan diajukan oleh mentor setelah periode selesai.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Rincian Perhitungan */}
-            <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-2.5">
-                  <div className="p-2 rounded-xl bg-blue-50 text-blue-600 shrink-0 mt-0.5">
-                    <Wallet className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm sm:text-base">Rincian perhitungan</h3>
-                    <p className="text-[11px] text-slate-500">Periode {periodStipend.dateRange}</p>
-                  </div>
-                </div>
-                <span className="text-lg font-black text-blue-600">
-                  {Math.round((periodStipend.paidDays / (periodStipend.totalWorkingDays || 1)) * 100)}%
+                <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-200">
+                  Estimasi Uang Saku {currentPeriodObj.name}
                 </span>
-              </div>
-
-              <div>
-                <div className="text-xs text-slate-500 mb-1">Ringkasan pembayaran</div>
-                <div className="text-base font-bold text-slate-800">
-                  {periodStipend.paidDays} dari {periodStipend.totalWorkingDays} hari dibayar
+                <div className="text-3xl font-black text-white mt-1">
+                  Rp {periodStipend.nominalEstimate.toLocaleString('id-ID')}
                 </div>
               </div>
 
-              {/* Grid Dibayar vs Tidak Dibayar */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-950">Dibayar</span>
-                    <span className="text-xs font-extrabold text-emerald-700">
-                      {periodStipend.paidDays} hari
-                    </span>
-                  </div>
-                  <div className="space-y-1 text-[11px] text-emerald-800">
-                    <div className="flex justify-between">
-                      <span>Kehadiran disetujui</span>
-                      <strong>{periodStipend.approvedAttendanceDays} hari</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Izin dibayar</span>
-                      <strong>{periodStipend.paidLeaveDays} hari</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-200/80 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-rose-950">Tidak dibayar</span>
-                    <span className="text-xs font-extrabold text-rose-700">
-                      {periodStipend.unpaidDays} hari
-                    </span>
-                  </div>
-                  <div className="space-y-1 text-[11px] text-rose-800">
-                    <div className="flex justify-between">
-                      <span>Tidak hadir</span>
-                      <strong>{periodStipend.absentDays} hari</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Kehadiran ditolak</span>
-                      <strong>{periodStipend.rejectedAttendanceDays} hari</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Tanpa catatan</span>
-                      <strong>{periodStipend.noRecordDays} hari</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Non-working days info */}
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-xs text-slate-600">
-                <Building className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-800">
-                    {periodStipend.nonWorkingDays} tanggal tidak termasuk hari kerja
-                  </strong>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Hari libur nasional ({periodStipend.holidays} hari) dan jadwal libur posisi (
-                    {periodStipend.positionOffDays} hari) tidak memengaruhi pembayaran.
-                  </p>
-                </div>
-              </div>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  periodStipend.submissionStatus === 'Diajukan' ||
+                  periodStipend.submissionStatus === 'Cair'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                    : 'bg-white/10 text-indigo-200'
+                }`}
+              >
+                {periodStipend.submissionStatus}
+              </span>
             </div>
 
-            {/* Rincian status per tanggal breakdown */}
-            <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-3">
-              <h4 className="font-bold text-slate-900 text-sm">Rincian status per kategori</h4>
-              <div className="divide-y divide-slate-100 text-xs text-slate-700">
-                <div className="py-2.5 flex justify-between">
-                  <span>Kehadiran disetujui</span>
-                  <strong className="text-emerald-700 font-bold">
-                    {periodStipend.approvedAttendanceDays} hari
-                  </strong>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span>Izin dibayar</span>
-                  <strong className="text-emerald-700 font-bold">
-                    {periodStipend.paidLeaveDays} hari
-                  </strong>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span>Izin tidak dibayar</span>
-                  <strong>{periodStipend.unpaidLeaveDays} hari</strong>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span>Tidak hadir</span>
-                  <strong>{periodStipend.absentDays} hari</strong>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span>Kehadiran ditolak</span>
-                  <strong>{periodStipend.rejectedAttendanceDays} hari</strong>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span>Hari libur nasional</span>
-                  <strong>{periodStipend.holidays} hari</strong>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span>Jadwal libur posisi</span>
-                  <strong>{periodStipend.positionOffDays} hari</strong>
-                </div>
+            {/* Paid days meter */}
+            <div className="space-y-1.5 pt-2 border-t border-white/10">
+              <div className="flex justify-between text-xs text-indigo-200">
+                <span>Rasio Hari Kerja Dibayar</span>
+                <strong className="text-white">
+                  {periodStipend.paidDays} dari {periodStipend.totalWorkingDays} hari (
+                  {Math.round((periodStipend.paidDays / (periodStipend.totalWorkingDays || 1)) * 100)}%)
+                </strong>
               </div>
-            </div>
-
-            {/* Rekening Penerima */}
-            <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 text-sm">Rekening penerima</h4>
-                  <p className="text-[11px] text-slate-500">
-                    Rekening yang digunakan saat uang saku diajukan
-                  </p>
-                </div>
+              <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full"
+                  style={{
+                    width: `${Math.round(
+                      (periodStipend.paidDays / (periodStipend.totalWorkingDays || 1)) * 100
+                    )}%`,
+                  }}
+                />
               </div>
-
-              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-medium">Bank</span>
-                  <strong className="text-slate-800">{periodStipend.bankName}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-medium">Nomor rekening</span>
-                  <strong className="font-mono text-slate-800">
-                    {periodStipend.accountNumberMasked}
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-medium">Nama pemilik</span>
-                  <strong className="text-slate-800">{periodStipend.accountHolder}</strong>
-                </div>
-              </div>
-
-              <p className="text-[10px] text-slate-400 italic">
-                * Perhitungan dan rekening mengikuti data saat Mentor mengajukan uang saku.
-              </p>
             </div>
           </div>
-        ) : (
-          <div className="p-8 rounded-3xl bg-white border border-slate-200 text-center">
-            <Wallet className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-            <p className="text-xs text-slate-500">Data uang saku tidak ditemukan untuk periode ini.</p>
-          </div>
-        )}
 
-        <div className="pt-2 text-center">
-          <ServerClock />
-        </div>
-      </div>
-    );
-  }
+          {/* Breakdown Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3">
+              <h4 className="font-bold text-slate-900 text-sm">Rincian Hari Kehadiran</h4>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between p-2.5 rounded-xl bg-emerald-50 text-emerald-900 font-semibold">
+                  <span>Kehadiran Disetujui</span>
+                  <strong>{periodStipend.approvedAttendanceDays} Hari</strong>
+                </div>
+                <div className="flex justify-between p-2.5 rounded-xl bg-teal-50 text-teal-900 font-semibold">
+                  <span>Izin Berbayar (Eligible)</span>
+                  <strong>{periodStipend.paidLeaveDays} Hari</strong>
+                </div>
+                <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 text-slate-700">
+                  <span>Hari Libur Operasional & Nasional</span>
+                  <strong>{periodStipend.nonWorkingDays} Hari</strong>
+                </div>
+              </div>
+            </div>
 
-  // ====================== SUB-VIEW: SURVEI ======================
-  if (subView === 'survei') {
-    return (
-      <div className="space-y-4 pb-20 fade-in">
-        {/* Header with back */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSubView('menu')}
-            className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Survei</h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Bagikan pengalaman Anda untuk membantu peningkatan program magang.
-            </p>
+            <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3">
+              <h4 className="font-bold text-slate-900 text-sm">Rekening Penerima Manfaat</h4>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Bank</span>
+                  <strong className="text-slate-900">{periodStipend.bankName}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Nomor Rekening</span>
+                  <strong className="font-mono text-slate-900">{periodStipend.accountNumberMasked}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Atas Nama</span>
+                  <strong className="text-slate-900">{periodStipend.accountHolder}</strong>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Locked state banner matching screenshot */}
-        <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+      {/* ===================== TAB: SURVEI ===================== */}
+      {subView === 'survei' && (
+        <div className="p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
             <ClipboardCheck className="w-6 h-6" />
           </div>
-          <h3 className="font-bold text-slate-800 text-sm sm:text-base">
-            Survei akan tersedia pada bulan terakhir masa magang
-          </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Formulir evaluasi kepuasan program, mentoring, dan fasilitas akan terbuka secara otomatis
-            pada Periode 6 (Januari - Februari 2027).
+          <h3 className="font-bold text-slate-900 text-base">Survei Pengalaman Magang</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+            Kuesioner evaluasi program, mentoring, dan fasilitas magang akan terbuka otomatis pada bulan
+            terakhir periode magang Anda (Periode 6).
           </p>
         </div>
+      )}
 
-        <div className="pt-2 text-center">
-          <ServerClock />
-        </div>
-      </div>
-    );
-  }
-
-  // ====================== MAIN MENU VIEW ======================
-  return (
-    <div className="space-y-4 pb-20 fade-in">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-          Perkembangan Magang
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 font-medium">
-          Lihat kurikulum, evaluasi bulanan, pembayaran uang saku, dan survei program Anda.
-        </p>
-      </div>
-
-      {/* Menu Options matching Screenshot 4 */}
-      <div className="space-y-3">
-        {/* 1. Kurikulum */}
-        <div
-          onClick={() => setSubView('kurikulum')}
-          className="p-4 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100 group-hover:scale-105 transition-transform">
-              <BookOpen className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
-                Kurikulum
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                <span>Kurikulum Magang dan Fokus Pembelajaran</span>
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-700 transition-colors" />
-        </div>
-
-        {/* 2. Evaluasi Bulanan */}
-        <div
-          onClick={() => setSubView('evaluasi')}
-          className="p-4 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:scale-105 transition-transform">
-              <FileCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
-                Evaluasi Bulanan
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                <span>Penilaian Mentor per periode</span>
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-700 transition-colors" />
-        </div>
-
-        {/* 3. Uang Saku */}
-        <div
-          onClick={() => setSubView('uang_saku')}
-          className="p-4 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100 group-hover:scale-105 transition-transform">
-              <Wallet className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
-                Uang Saku
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                <span>Rincian pembayaran per periode</span>
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-700 transition-colors" />
-        </div>
-
-        {/* 4. Survei */}
-        <div
-          onClick={() => setSubView('survei')}
-          className="p-4 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 group-hover:scale-105 transition-transform">
-              <ClipboardCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
-                Survei
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                <span>Tersedia pada bulan terakhir magang</span>
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-700 transition-colors" />
-        </div>
-      </div>
-
-      <div className="pt-4 text-center">
+      <div className="pt-2 text-center">
         <ServerClock />
       </div>
     </div>

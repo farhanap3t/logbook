@@ -14,7 +14,7 @@ export const LogbookPrintView: React.FC<LogbookPrintViewProps> = ({
 }) => {
   return (
     <div className="print-only p-8 text-black bg-white font-serif max-w-4xl mx-auto">
-      {/* Official Header */}
+      {/* Official Universal Header */}
       <div className="border-b-2 border-black pb-4 text-center mb-6">
         <h1 className="text-xl font-bold uppercase tracking-wider">
           Buku Laporan Aktivitas Harian (Logbook) Magang
@@ -54,7 +54,7 @@ export const LogbookPrintView: React.FC<LogbookPrintViewProps> = ({
             <strong>Periode Laporan:</strong> {period.name} ({period.startDate} s/d {period.endDate})
           </div>
           <div>
-            <strong>Mentor Pembimbing:</strong> {profile.mentorName} ({profile.mentorEmail})
+            <strong>Mentor Lapangan:</strong> {profile.mentorName} ({profile.mentorEmail})
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@ export const LogbookPrintView: React.FC<LogbookPrintViewProps> = ({
           <p className="mb-16">
             Menyetujui,
             <br />
-            Mentor Lapangan (BSI)
+            Mentor Lapangan
           </p>
           <p className="font-bold underline">{profile.mentorName}</p>
           <p>{profile.mentorEmail}</p>

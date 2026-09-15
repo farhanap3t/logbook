@@ -119,7 +119,7 @@ export function App() {
               todayDate={todayDate}
               todayEntry={todayEntry}
               announcements={announcements}
-              onOpenLogbookForm={(date) => handleOpenForm(date)}
+              onOpenLogbookForm={(date, existing) => handleOpenForm(date, existing)}
               onOpenAnnouncements={() => setIsAnnouncementsOpen(true)}
               onNavigateTab={(tab) => setActiveTab(tab)}
             />

@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import {
-  Calendar as CalendarIcon,
-  ClipboardList,
-  AlertCircle,
-  ChevronRight,
+  Calendar,
+  Sparkles,
+  ArrowRight,
   CheckCircle2,
   Clock,
   Award,
   TrendingUp,
-  X,
   FileCheck2,
+  ShieldCheck,
+  ChevronRight,
+  Zap,
 } from 'lucide-react';
 import type { UserProfile, LogbookEntry, Announcement } from '../types';
 import { ServerClock } from '../components/ServerClock';
@@ -19,7 +20,7 @@ interface HomePageProps {
   todayDate: string; // YYYY-MM-DD
   todayEntry?: LogbookEntry;
   announcements: Announcement[];
-  onOpenLogbookForm: (date: string) => void;
+  onOpenLogbookForm: (date: string, existingEntry?: LogbookEntry) => void;
   onOpenAnnouncements: () => void;
   onNavigateTab: (tab: 'riwayat' | 'perkembangan' | 'akun') => void;
 }
@@ -33,9 +34,8 @@ export const HomePage: React.FC<HomePageProps> = ({
   onOpenAnnouncements,
   onNavigateTab,
 }) => {
-  const [showNoticeBanner, setShowNoticeBanner] = useState(true);
+  const [showPolicyNotice, setShowPolicyNotice] = useState(true);
 
-  // Format today's human-readable date e.g. "Selasa, 15 September 2026"
   const formattedToday = new Intl.DateTimeFormat('id-ID', {
     weekday: 'long',
     day: 'numeric',
@@ -46,215 +46,274 @@ export const HomePage: React.FC<HomePageProps> = ({
   const unreadCount = announcements.filter((a) => a.isNew).length;
 
   return (
-    <div className="space-y-4 pb-20 fade-in">
-      {/* Header Profile Greeting */}
-      <div className="flex items-center justify-between pt-1">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-1.5">
-            Halo, {profile.name.split(' ')[0]} <span className="animate-wave inline-block origin-bottom-right">👋</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">{profile.company}</p>
-        </div>
+    <div className="space-y-5 pb-20 fade-in">
+      {/* Hero Welcome Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-xl shadow-indigo-950/10 border border-indigo-900/40">
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 -mb-16 w-48 h-48 rounded-full bg-violet-500/10 blur-2xl pointer-events-none" />
 
-        <button
-          onClick={() => onNavigateTab('akun')}
-          className="relative group rounded-full ring-2 ring-blue-500/20 hover:ring-blue-500/50 transition-all cursor-pointer p-0.5"
-          title="Lihat Profil"
-        >
-          <img
-            src={profile.avatarUrl}
-            alt={profile.name}
-            className="w-11 h-11 rounded-full object-cover shadow-xs"
-          />
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
-        </button>
-      </div>
-
-      {/* Dismissible Policy Notice Banner */}
-      {showNoticeBanner && (
-        <div className="p-3.5 rounded-2xl bg-blue-50/90 border border-blue-200/90 text-blue-900 flex items-start justify-between gap-3 shadow-2xs">
-          <div className="flex items-start gap-2.5">
-            <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5">
-              <span className="text-xs font-bold font-serif">i</span>
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-indigo-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{profile.position}</span>
+              <span className="opacity-60">•</span>
+              <span className="text-white font-bold">{profile.status}</span>
             </div>
-            <p className="text-xs sm:text-[13px] leading-relaxed text-blue-900 font-medium">
-              Izin hingga 3 hari per periode dibayar. Izin ke-4 dan seterusnya tidak dibayar, tetapi tidak
-              dihitung untuk peringatan atau pemberhentian akibat ketidakhadiran.
+
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Halo, {profile.name.split(' ')[0]} <span className="inline-block origin-bottom-right animate-wave">👋</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-indigo-200/80 font-normal max-w-lg leading-relaxed">
+              Selamat datang di workspace Logbook. Pantau presensi harian, pengerjaan tugas, dan evaluasi
+              kompetensi magang Anda di <strong className="text-white font-semibold">{profile.company}</strong>.
             </p>
           </div>
-          <button
-            onClick={() => setShowNoticeBanner(false)}
-            className="text-blue-500 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-100/50 transition-colors shrink-0"
-            title="Tutup pengumuman"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
 
-      {/* Announcement Notification Pill */}
-      <div
-        onClick={onOpenAnnouncements}
-        className="p-3 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-center justify-between gap-3 cursor-pointer hover:bg-amber-100/60 transition-all shadow-2xs group"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-700">
-            <AlertCircle className="w-4 h-4" />
+          {/* User Avatar Card */}
+          <div
+            onClick={() => onNavigateTab('akun')}
+            className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 transition-all cursor-pointer shrink-0 self-start sm:self-auto backdrop-blur-md"
+            title="Buka Profil & Akun"
+          >
+            <img
+              src={profile.avatarUrl}
+              alt={profile.name}
+              className="w-12 h-12 rounded-xl object-cover ring-2 ring-indigo-400/40"
+            />
+            <div className="pr-2">
+              <div className="text-xs font-bold text-white leading-tight">{profile.name}</div>
+              <div className="text-[11px] text-indigo-200">{profile.studentId}</div>
+            </div>
           </div>
-          <span className="text-xs sm:text-sm font-semibold text-amber-950">
-            {announcements.length} pengumuman {unreadCount > 0 && `· ${unreadCount} baru`}
-          </span>
         </div>
-        <button className="text-xs font-bold text-amber-900 group-hover:underline flex items-center gap-0.5">
-          Lihat pengumuman &rarr;
-        </button>
+
+        {/* Quick Highlights Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-6 mt-6 border-t border-white/10">
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-200 block">
+              Kehadiran
+            </span>
+            <span className="text-lg font-black text-white">20 Hari</span>
+            <span className="text-[10px] text-emerald-400 block font-medium">100% Target</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-200 block">
+              Izin Berbayar
+            </span>
+            <span className="text-lg font-black text-white">1 Hari</span>
+            <span className="text-[10px] text-indigo-300 block font-medium">Sisa 2 hari</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-200 block">
+              Evaluasi Mentor
+            </span>
+            <span className="text-lg font-black text-white">3.5 / 4.0</span>
+            <span className="text-[10px] text-amber-300 block font-medium">Predikat Sangat Baik</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-200 block">
+              Uang Saku Periode 1
+            </span>
+            <span className="text-lg font-black text-white">100% Cair</span>
+            <span className="text-[10px] text-emerald-400 block font-medium">Diajukan Mentor</span>
+          </div>
+        </div>
       </div>
 
-      {/* Main Card: Hari Ini */}
-      <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-        {/* Card Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
-              <CalendarIcon className="w-5 h-5" />
+      {/* Announcements & Policy Alert */}
+      <div className="space-y-2.5">
+        {/* Policy Notice */}
+        {showPolicyNotice && (
+          <div className="p-4 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 text-indigo-950 flex items-start justify-between gap-3 shadow-2xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-indigo-600 text-white shrink-0 mt-0.5 shadow-xs">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div className="text-xs sm:text-[13px] leading-relaxed">
+                <strong className="font-bold text-indigo-950 block">Kebijakan Presensi & Izin Berbayar</strong>
+                Hak izin resmi hingga 3 hari kerja per periode tetap dihitung berbayar (eligible uang saku). Izin ke-4 dan seterusnya tidak dibayarkan namun tidak memengaruhi catatan sanksi kelulusan.
+              </div>
+            </div>
+            <button
+              onClick={() => setShowPolicyNotice(false)}
+              className="text-indigo-400 hover:text-indigo-700 text-xs font-semibold p-1 hover:bg-indigo-100/50 rounded-lg transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
+        )}
+
+        {/* Announcements Pill Bar */}
+        <div
+          onClick={onOpenAnnouncements}
+          className="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 group-hover:scale-105 transition-transform">
+              <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">Hari Ini</h2>
-              <p className="text-xs text-slate-700 font-semibold">{formattedToday}</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Periode magang 10 Agu 2026 – 9 Feb 2027
-              </p>
+              <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
+                {announcements.length} Pengumuman Terkini
+              </span>
+              {unreadCount > 0 && (
+                <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                  {unreadCount} baru
+                </span>
+              )}
             </div>
           </div>
-          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Aktif
+          <span className="text-xs font-bold text-indigo-600 group-hover:underline flex items-center gap-1">
+            Buka Papan Pengumuman &rarr;
           </span>
         </div>
+      </div>
 
-        {/* Card Content Status */}
+      {/* Main Action Card: Laporan Hari Ini */}
+      <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-extrabold text-slate-900 text-base sm:text-lg">Catatan Aktivitas Hari Ini</h2>
+              <p className="text-xs text-slate-500 font-medium">{formattedToday}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+              <Clock className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Batas: 23:59 WIB</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Content depending on state */}
         {!todayEntry ? (
-          /* Unfilled State */
-          <div className="py-5 flex flex-col items-center text-center space-y-3">
-            <div className="w-16 h-16 rounded-full bg-blue-50/80 text-blue-600 flex items-center justify-center border border-blue-100">
-              <ClipboardList className="w-8 h-8" />
+          <div className="py-4 px-3 sm:px-6 rounded-2xl bg-gradient-to-r from-indigo-50/50 via-slate-50/50 to-indigo-50/50 border border-dashed border-indigo-200 text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md shadow-indigo-600/20">
+              <FileCheck2 className="w-7 h-7" />
             </div>
 
-            <div className="max-w-xs space-y-1">
-              <h3 className="font-bold text-slate-900 text-base">Laporan hari ini belum diisi</h3>
+            <div className="max-w-md mx-auto space-y-1">
+              <h3 className="font-bold text-slate-900 text-base">Laporan Hari Ini Belum Diserahkan</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Silakan isi laporan harian Anda hari ini. Kehadiran akan tercatat bersamaan.
+                Tuliskan uraian tugas yang Anda selesaikan, pembelajaran teknis baru, serta kendala &
+                solusi (minimal 100 karakter pada tiap bagian). Koordinat GPS akan diverifikasi otomatis.
               </p>
             </div>
 
             <button
               onClick={() => onOpenLogbookForm(todayDate)}
-              className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm shadow-blue-500/30 transition-all hover:scale-[1.01] cursor-pointer"
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.02] cursor-pointer"
             >
-              <FileCheck2 className="w-4 h-4" />
-              Isi Laporan Hari Ini
-              <ChevronRight className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" />
+              Isi Laporan Hari Ini Sekarang
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         ) : (
-          /* Filled State */
-          <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/90 space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                <span className="text-xs font-bold text-emerald-900">
-                  Laporan Hari Ini Terkirim ({todayEntry.attendanceType})
+                <span className="text-xs sm:text-sm font-bold text-emerald-950">
+                  Laporan Berhasil Diserahkan ({todayEntry.attendanceType})
                 </span>
               </div>
-              <span className="text-[11px] font-semibold text-slate-500">
+              <span className="text-[11px] font-mono font-semibold text-slate-500">
                 {todayEntry.submittedAt}
               </span>
             </div>
 
-            <p className="text-xs text-slate-700 line-clamp-2 bg-white/70 p-2.5 rounded-xl border border-emerald-100">
+            <p className="text-xs sm:text-sm text-slate-700 bg-white/80 p-3.5 rounded-xl border border-emerald-100 leading-relaxed">
               {todayEntry.activityDescription}
             </p>
 
             <div className="flex items-center justify-between pt-1">
-              <span className="text-xs font-medium text-slate-600 flex items-center gap-1">
+              <div className="text-xs text-slate-600">
                 Status:{' '}
-                <strong className="text-blue-700">
+                <strong className="text-indigo-700">
                   {todayEntry.status === 'hadir_disetujui'
                     ? 'Disetujui Mentor'
                     : 'Menunggu Review Mentor'}
                 </strong>
-              </span>
+              </div>
               <button
-                onClick={() => onOpenLogbookForm(todayDate)}
-                className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline"
+                onClick={() => onOpenLogbookForm(todayDate, todayEntry)}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
               >
-                Lihat / Edit Laporan &rarr;
+                Lihat / Perbarui Laporan &rarr;
               </button>
             </div>
           </div>
         )}
-
-        {/* Deadline Information */}
-        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center flex items-center justify-center gap-2 text-xs text-slate-600">
-          <Clock className="w-3.5 h-3.5 text-blue-500" />
-          <span>
-            Batas pengisian laporan hari ini pukul{' '}
-            <strong className="text-slate-800 font-bold">23.59 WIB</strong>
-          </span>
-        </div>
       </div>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Quick Navigation Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div
           onClick={() => onNavigateTab('riwayat')}
-          className="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs group flex items-center justify-between"
         >
-          <div className="flex items-center justify-between text-slate-500 mb-1.5">
-            <span className="text-[11px] font-semibold">Kehadiran Disetujui</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 group-hover:scale-105 transition-transform">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-indigo-600">
+                Kalender Presensi
+              </h4>
+              <p className="text-[11px] text-slate-500">Cek status riwayat kehadiran</p>
+            </div>
           </div>
-          <div className="text-xl font-black text-slate-900">20 Hari</div>
-          <p className="text-[10px] text-emerald-600 font-medium mt-0.5">100% dari target periode</p>
-        </div>
-
-        <div
-          onClick={() => onNavigateTab('riwayat')}
-          className="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
-        >
-          <div className="flex items-center justify-between text-slate-500 mb-1.5">
-            <span className="text-[11px] font-semibold">Izin Berbayar</span>
-            <ClipboardList className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="text-xl font-black text-slate-900">1 Hari</div>
-          <p className="text-[10px] text-slate-500 font-medium mt-0.5">Sisa kuota: 2 hari</p>
+          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
         </div>
 
         <div
           onClick={() => onNavigateTab('perkembangan')}
-          className="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs group flex items-center justify-between"
         >
-          <div className="flex items-center justify-between text-slate-500 mb-1.5">
-            <span className="text-[11px] font-semibold">Evaluasi Mentor</span>
-            <Award className="w-4 h-4 text-amber-500" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600 group-hover:scale-105 transition-transform">
+              <Award className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-indigo-600">
+                Evaluasi & Kurikulum
+              </h4>
+              <p className="text-[11px] text-slate-500">Nilai mentor & silabus</p>
+            </div>
           </div>
-          <div className="text-xl font-black text-slate-900">3.3 / 4.0</div>
-          <p className="text-[10px] text-amber-600 font-medium mt-0.5">Predikat: Baik</p>
+          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
         </div>
 
         <div
-          onClick={() => onNavigateTab('perkembangan')}
-          className="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+          onClick={() => onNavigateTab('akun')}
+          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs group flex items-center justify-between"
         >
-          <div className="flex items-center justify-between text-slate-500 mb-1.5">
-            <span className="text-[11px] font-semibold">Uang Saku Periode 1</span>
-            <TrendingUp className="w-4 h-4 text-emerald-600" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-105 transition-transform">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-indigo-600">
+                Cetak Laporan Resmi
+              </h4>
+              <p className="text-[11px] text-slate-500">Ekspor buku logbook PDF</p>
+            </div>
           </div>
-          <div className="text-xl font-black text-slate-900">100%</div>
-          <p className="text-[10px] text-emerald-600 font-medium mt-0.5">Status: Diajukan Mentor</p>
+          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
         </div>
       </div>
 
-      {/* Footer Server Time Banner */}
+      {/* Footer Live Server Sync */}
       <div className="pt-2 text-center">
         <ServerClock />
       </div>
