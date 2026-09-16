@@ -42,9 +42,9 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
         content: (
           <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
             <p>
-              Aplikasi <strong>Monev Magang BSI</strong> adalah sistem monitoring dan evaluasi terpadu
+              Aplikasi <strong>Logbook Magang</strong> adalah sistem pemantauan dan evaluasi terpadu
               untuk mendokumentasikan progres harian mahasiswa selama menjalani program magang kerja
-              praktik di <strong>PT. Bank Syariah Indonesia Tbk</strong>.
+              praktik di <strong>PT Inovasi Digital Nusantara</strong>.
             </p>
             <p>
               Panduan ini menjelaskan alur operasional, tata cara pengisian logbook harian yang sesuai
@@ -132,7 +132,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
                 </li>
                 <li>
                   <strong>Pembelajaran yang Diperoleh:</strong> Paparkan pemahaman konsep baru, proses
-                  bisnis perbankan syariah, atau solusi teknis yang didapat.
+                  bisnis industri, atau solusi teknis yang didapat.
                 </li>
                 <li>
                   <strong>Kendala yang Dialami:</strong> Tuliskan hambatan operasional serta inisiatif
@@ -250,7 +250,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
                 <li>Sikap, etika, dan perilaku profesional</li>
                 <li>Kemampuan komunikasi interpersonal dan tim</li>
                 <li>Inisiatif dan rasa tanggung jawab terhadap tugas</li>
-                <li>Kemampuan adaptasi terhadap budaya perbankan syariah</li>
+                <li>Kemampuan adaptasi terhadap budaya kerja profesional</li>
                 <li>Pengetahuan teknis IT dan eksekusi tugas</li>
                 <li>Produktivitas dan ketepatan waktu penyelesaian tiket</li>
                 <li>Kerja sama dan kontribusi dalam divisi</li>
@@ -288,9 +288,9 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
                   <strong>"Save as PDF"</strong>.
                 </li>
                 <li>
-                  Dokumen akan tersusun rapi dengan Kop Resmi BSI, data identitas, tabel rekapitulasi, serta
+                  Dokumen akan tersusun rapi dengan Kop Resmi Instansi, data identitas, tabel rekapitulasi, serta
                   tiga kolom tanda tangan: <em>Peserta Magang</em>, <em>Dosen Pembimbing Kampus</em>, dan{' '}
-                  <em>Mentor Lapangan BSI</em>.
+                  <em>Mentor Lapangan</em>.
                 </li>
               </ol>
             </div>

@@ -39,7 +39,7 @@ export const ResignationModal: React.FC<ResignationModalProps> = ({
               <h3 className="font-bold text-slate-800 text-sm sm:text-base">
                 Pengajuan Pengunduran Diri
               </h3>
-              <p className="text-xs text-slate-500">Monev Magang BSI</p>
+              <p className="text-xs text-slate-500">Logbook Magang</p>
             </div>
           </div>
           <button

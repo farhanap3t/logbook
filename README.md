@@ -1,13 +1,13 @@
-# 📘 Monev Magang BSI - Aplikasi Web Logbook Aktivitas & Presensi Harian
+# 📘 Logbook - Aplikasi Web Pemantauan Aktivitas & Presensi Harian Magang
 
-Aplikasi web pemantauan aktivitas magang (Monev Logbook) modern, responsif, dan siap langsung online via **GitHub Pages**. Dirancang dengan arsitektur UI/UX korporat profesional tanpa kesan *AI slop*, mengintegrasikan validasi presensi GPS riil, counter minimal 100 karakter, kurikulum magang, evaluasi berkala mentor, transparansi perhitungan uang saku, hingga ekspor cetak buku logbook resmi.
+Aplikasi web pemantauan aktivitas magang (Logbook) modern, responsif, dan siap langsung online via **GitHub Pages**. Dirancang dengan arsitektur UI/UX korporat profesional tanpa kesan *AI slop*, mengintegrasikan validasi presensi GPS riil, counter minimal 100 karakter, kurikulum magang, evaluasi berkala mentor, transparansi perhitungan uang saku, hingga ekspor cetak buku logbook resmi.
 
 ---
 
 ## ✨ Fitur Utama
 
 1. **🏠 Beranda Interaktif**:
-   - Header profil peserta & instansi penempatan (*PT. Bank Syariah Indonesia Tbk*).
+   - Header profil peserta & instansi penempatan (*PT Inovasi Digital Nusantara*).
    - Jam operasional server real-time (WIB/GMT+7) dengan detik bergerak aktif.
    - Status kartu harian terpadu: pengingat batas pengisian pukul 23.59 WIB & status kehadiran.
    - Banner notifikasi kebijakan cuti/izin berbayar dan modal pusat pengumuman interaktif.
@@ -90,7 +90,7 @@ git init
 
 # Tambahkan semua file dan buat commit pertama
 git add .
-git commit -m "feat: inisialisasi aplikasi web logbook magang bsi monev"
+git commit -m "feat: inisialisasi aplikasi web logbook aktivitas magang"
 
 # Ubah nama branch utama ke main
 git branch -M main

@@ -1,6 +1,6 @@
 # Walkthrough: Logbook — Platform Pemantauan & Presensi Magang Modern
 
-Aplikasi telah berhasil dirombak total menjadi platform **"Logbook"** yang universal (terlepas dari branding spesifik BSI) dengan tampilan antarmuka (*UI/UX*) modern berestetika SaaS profesional (mengadopsi *design system* ala Linear, Vercel, dan Raycast: glassmorphism, palet indigo-slate, progress meter dinamis, dan visualisasi metrik eksekutif).
+Aplikasi telah berhasil dikembangkan menjadi platform **"Logbook"** yang universal dengan tampilan antarmuka (*UI/UX*) modern berestetika SaaS profesional (mengadopsi *design system* modern: glassmorphism, palet indigo-slate, progress meter dinamis, dan visualisasi metrik eksekutif).
 
 Aplikasi terhubung langsung ke repository GitHub dan otomatis dideploy ke **GitHub Pages**.
 
@@ -9,7 +9,7 @@ Aplikasi terhubung langsung ke repository GitHub dan otomatis dideploy ke **GitH
 ## Ringkasan Perombakan & Fitur Baru
 
 ### 1. 🌟 Rebranding Universal
-- **Nama Aplikasi**: Menjadi **Logbook Workspace** (bukan lagi Monev BSI).
+- **Nama Aplikasi**: Menjadi **Logbook Workspace**.
 - **Profil Perusahaan**: Menjadi *PT Inovasi Digital Nusantara* (dan dapat dikonfigurasi fleksibel di profil peserta).
 - **Judul & Metadata**: Diperbarui di `index.html` dan seluruh dokumen cetak resmi.
 
