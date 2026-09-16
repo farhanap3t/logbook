@@ -262,3 +262,4 @@ export const LogbookBoard: React.FC<LogbookBoardProps> = ({
     </div>
   );
 };
+

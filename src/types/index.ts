@@ -18,7 +18,7 @@ export type LogbookStatus =
 
 export type UserRole = 'User' | 'Supervisor' | 'Admin' | 'Viewer';
 
-export type ViewMode = 'table' | 'board' | 'timeline';
+export type ViewMode = 'table' | 'board' | 'timeline' | 'calendar';
 
 export interface AttachmentFile {
   id: string;
