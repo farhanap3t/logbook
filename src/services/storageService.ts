@@ -1,521 +1,584 @@
 import type {
-  UserProfile,
-  InternshipPeriod,
-  LogbookEntry,
-  CurriculumModule,
-  PeriodEvaluation,
-  StipendDetail,
-  Announcement,
+  LogbookRecord,
+  AuditTrailRecord,
+  CurrentUser,
+  UserRole,
+  LogbookFilterState,
+  SortField,
+  SortDirection,
 } from '../types';
 
 const STORAGE_KEYS = {
-  PROFILE: 'app_logbook_profile',
-  PERIODS: 'app_logbook_periods',
-  ENTRIES: 'app_logbook_entries',
-  CURRICULUM: 'app_logbook_curriculum',
-  EVALUATIONS: 'app_logbook_evaluations',
-  STIPENDS: 'app_logbook_stipends',
-  ANNOUNCEMENTS: 'app_logbook_announcements',
-  DRAFTS: 'app_logbook_drafts',
+  LOGBOOKS: 'app_logbook_records_v1',
+  AUDIT_TRAIL: 'app_logbook_audit_trail_v1',
+  CURRENT_USER: 'app_logbook_current_user_v1',
 };
 
-// Modern initial profile
-const initialProfile: UserProfile = {
-  name: 'MUHAMMAD FARHAN',
-  role: 'Software Engineering Intern',
-  email: 'farhn.mhmmad@gmail.com',
-  phone: '0895331284320',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  company: 'PT Inovasi Digital Nusantara',
-  position: 'Junior Software Engineer Intern',
-  placementLocation: 'Jakarta Selatan, DKI Jakarta',
-  internshipStartDate: '2026-08-10',
-  internshipEndDate: '2027-02-09',
-  status: 'Aktif',
-  mentorName: 'Rian Prasetyo, S.Kom',
-  mentorEmail: 'rian.prasetyo@inovasidigital.id',
-  universityName: 'Universitas Indonesia',
-  major: 'Ilmu Komputer & Sistem Informasi',
-  studentId: '2206123456',
-};
-
-const initialPeriods: InternshipPeriod[] = [
+// Available system users for testing role-based access
+export const AVAILABLE_USERS: CurrentUser[] = [
   {
-    id: 1,
-    name: 'Periode 1',
-    startDate: '2026-08-10',
-    endDate: '2026-09-09',
-    isCurrent: false,
+    id: 'usr-1',
+    name: 'Farhan Pratama',
+    role: 'User',
+    department: 'Software Engineering',
+    email: 'farhan.pratama@inovasidigital.id',
   },
   {
-    id: 2,
-    name: 'Periode 2',
-    startDate: '2026-09-10',
-    endDate: '2026-10-09',
-    isCurrent: true,
+    id: 'usr-2',
+    name: 'Siti Nurhaliza',
+    role: 'Supervisor',
+    department: 'Engineering & Tech',
+    email: 'siti.nurhaliza@inovasidigital.id',
   },
   {
-    id: 3,
-    name: 'Periode 3',
-    startDate: '2026-10-10',
-    endDate: '2026-11-09',
-    isCurrent: false,
+    id: 'usr-3',
+    name: 'Budi Santoso',
+    role: 'Admin',
+    department: 'IT Operations',
+    email: 'budi.santoso@inovasidigital.id',
   },
   {
-    id: 4,
-    name: 'Periode 4',
-    startDate: '2026-11-10',
-    endDate: '2026-12-09',
-    isCurrent: false,
-  },
-  {
-    id: 5,
-    name: 'Periode 5',
-    startDate: '2026-12-10',
-    endDate: '2027-01-09',
-    isCurrent: false,
-  },
-  {
-    id: 6,
-    name: 'Periode 6',
-    startDate: '2027-01-10',
-    endDate: '2027-02-09',
-    isCurrent: false,
+    id: 'usr-4',
+    name: 'Dian Permata',
+    role: 'Viewer',
+    department: 'Auditor Eksternal',
+    email: 'dian.permata@auditor.id',
   },
 ];
 
-const initialAnnouncements: Announcement[] = [
+const INITIAL_LOGBOOKS: LogbookRecord[] = [
   {
-    id: 'ann-1',
-    title: 'Ketentuan Kebijakan Kehadiran & Hak Izin Berbayar',
-    date: '2026-09-10',
-    category: 'Penting',
-    content:
-      'Izin resmi hingga maksimal 3 hari kerja per periode magang tetap dihitung berbayar (eligible stipend). Izin ke-4 dan seterusnya tidak dibayarkan, namun tidak memengaruhi kelulusan program.',
-    isNew: true,
-  },
-  {
-    id: 'ann-2',
-    title: 'Batas Akhir Penyerahan Logbook Harian Pukul 23:59 WIB',
-    date: '2026-09-05',
-    category: 'Penting',
-    content:
-      'Setiap peserta wajib menyerahkan laporan aktivitas harian dengan minimal 100 karakter pada ketiga bagian utama sebelum pukul 23:59 WIB setiap hari kerja aktif.',
-    isNew: false,
-  },
-  {
-    id: 'ann-3',
-    title: 'Sesi Sinergi Tim & Engineering Mentoring Mingguan',
-    date: '2026-09-02',
-    category: 'Kegiatan',
-    content:
-      'Sesi sharing mingguan bersama Engineering Lead akan diselenggarakan setiap hari Jumat pukul 14:00 WIB untuk meninjau progres sprint dan arsitektur kode.',
-    isNew: false,
-  },
-];
-
-const initialCurriculum: CurriculumModule[] = [
-  {
-    id: 'curr-p2-1',
-    periodId: 2,
-    title: 'System Architecture, Code Review & Teamwork',
-    type: 'Praktik',
-    month: 'Bulan ke-2',
-    duration: '1–14 hari',
-    description:
-      'Fokus dua minggu ini adalah mendalami arsitektur perangkat lunak modern, praktik code review yang bersih, penulisan automated tests, dan berkolaborasi intensif dalam tim pengembangan lintas fungsi.',
-    completed: true,
-  },
-  {
-    id: 'curr-p2-2',
-    periodId: 2,
-    title: 'Problem Solving in Action & Sprint Reporting',
-    type: 'Praktik',
-    month: 'Bulan ke-2',
-    duration: '1–14 hari',
-    description:
-      'Peserta diasah kemampuan analitisnya dalam mendiagnosis bug, merumuskan solusi optimal berbasis data, serta memaparkan ringkasan hasil kerja dalam sesi demo sprint mingguan.',
-    completed: false,
-  },
-  {
-    id: 'curr-p1-1',
-    periodId: 1,
-    title: 'Engineering Onboarding & Infrastructure Setup',
-    type: 'Teori',
-    month: 'Bulan ke-1',
-    duration: '1–7 hari',
-    description:
-      'Pengenalan standar keamanan kode, setup workstation, arsitektur microservices, pipeline CI/CD, dan aturan repository git tim.',
-    completed: true,
-  },
-  {
-    id: 'curr-p1-2',
-    periodId: 1,
-    title: 'First Project Sprint & Technical Documentation',
-    type: 'Praktik',
-    month: 'Bulan ke-1',
-    duration: '8–30 hari',
-    description:
-      'Pengerjaan tiket fitur perdana, implementasi modul API, penulisan dokumentasi teknis OpenAPI, serta koordinasi daily standup.',
-    completed: true,
-  },
-];
-
-const initialEvaluations: PeriodEvaluation[] = [
-  {
-    periodId: 1,
-    periodName: 'Periode 1 (10 Agustus 2026 - 08 September 2026)',
-    status: 'Selesai',
-    mentorName: 'Rian Prasetyo, S.Kom',
-    completedAt: '2026-09-08 20:39 WIB',
-    overallScore: 3.5,
-    aspects: [
-      { id: 'asp-1', aspect: '1. Kehadiran dan kedisiplinan kerja', score: 'SB' },
-      { id: 'asp-2', aspect: '2. Sikap dan profesionalisme', score: 'B' },
-      { id: 'asp-3', aspect: '3. Kemampuan komunikasi & koordinasi', score: 'B' },
-      { id: 'asp-4', aspect: '4. Inisiatif dan tanggung jawab tugas', score: 'B' },
-      { id: 'asp-5', aspect: '5. Kecepatan adaptasi teknologi', score: 'SB' },
-      { id: 'asp-6', aspect: '6. Kualitas eksekusi teknis & koding', score: 'B' },
-      { id: 'asp-7', aspect: '7. Produktivitas dan ketepatan waktu', score: 'B' },
-      { id: 'asp-8', aspect: '8. Kolaborasi & kerja sama tim', score: 'SB' },
-    ],
-    curriculumAchievements: [
-      { moduleName: 'Engineering Onboarding & Infrastructure Setup', score: 'Sangat Baik' },
-      { moduleName: 'First Project Sprint & Technical Documentation', score: 'Baik' },
-    ],
-    mentorComment:
-      'Farhan menunjukkan adaptasi yang sangat cepat terhadap codebase proyek. Struktur koding rapi dan komunikasi di tim berjalan sangat baik.',
-  },
-];
-
-const initialStipends: StipendDetail[] = [
-  {
-    periodId: 1,
-    periodName: 'Periode 1',
-    dateRange: '10 Agustus 2026 - 09 September 2026',
-    submissionStatus: 'Diajukan',
-    submittedBy: 'Rian Prasetyo, S.Kom (Mentor)',
-    submittedAt: '9 September 2026 pukul 16.10 WIB',
-    nominalEstimate: 3500000,
-    bankName: 'Bank Central Asia (BCA)',
-    accountNumberMasked: '*******6588',
-    accountHolder: 'Muhammad Farhan',
-    totalWorkingDays: 21,
-    paidDays: 21,
-    approvedAttendanceDays: 20,
-    paidLeaveDays: 1,
-    unpaidDays: 0,
-    absentDays: 0,
-    rejectedAttendanceDays: 0,
-    noRecordDays: 0,
-    unpaidLeaveDays: 0,
-    nonWorkingDays: 10,
-    holidays: 2,
-    positionOffDays: 8,
-  },
-  {
-    periodId: 2,
-    periodName: 'Periode 2',
-    dateRange: '10 September 2026 - 09 Oktober 2026',
-    submissionStatus: 'Belum Diajukan',
-    submittedBy: '-',
-    submittedAt: '-',
-    nominalEstimate: 3500000,
-    bankName: 'Bank Central Asia (BCA)',
-    accountNumberMasked: '*******6588',
-    accountHolder: 'Muhammad Farhan',
-    totalWorkingDays: 22,
-    paidDays: 4,
-    approvedAttendanceDays: 4,
-    paidLeaveDays: 0,
-    unpaidDays: 0,
-    absentDays: 0,
-    rejectedAttendanceDays: 0,
-    noRecordDays: 0,
-    unpaidLeaveDays: 0,
-    nonWorkingDays: 2,
-    holidays: 0,
-    positionOffDays: 2,
-  },
-];
-
-const initialEntries: LogbookEntry[] = [
-  {
-    id: 'entry-2026-09-10',
-    date: '2026-09-10',
-    periodId: 2,
-    attendanceType: 'Hadir',
-    status: 'hadir_disetujui',
-    activityDescription:
-      'Melakukan analisis arsitektur microservices untuk modul streaming data. Mempelajari dokumentasi internal mengenai event-driven architecture menggunakan Apache Kafka dan Redis caching.',
-    learnings:
-      'Memahami mekanisme decoupling sistem dengan asynchronous message queues serta teknik handling backpressure untuk mencegah buffer overflow pada high traffic.',
-    challenges:
-      'Memerlukan waktu untuk memahami setup distributed tracing dengan OpenTelemetry pada container Docker lokal.',
-    location: {
-      latitude: -6.2088,
-      longitude: 106.8456,
-      address: 'Kantor Pusat Teknologi, Jakarta Selatan',
-      verified: true,
-      timestamp: '2026-09-10 08:30:15 WIB',
+    id: 'LB-000001',
+    tanggal: '2026-09-16',
+    judul: 'UAT Testing Modul Manajemen Logbook',
+    kategori: 'Testing',
+    status: 'Completed',
+    deskripsi:
+      'Melakukan User Acceptance Testing (UAT) komprehensif terhadap fungsionalitas pembuatan, pencarian, dan audit trail logbook sesuai spesifikasi dokumen PRD.',
+    catatan: 'Seluruh skenario uji acceptance criteria AC-01 hingga AC-09 terpenuhi dengan hasil lulus (pass).',
+    createdBy: 'Farhan Pratama',
+    createdDate: '2026-09-16 09:30',
+    updatedBy: 'Siti Nurhaliza',
+    updatedDate: '2026-09-16 11:15',
+    attachment: {
+      id: 'att-1',
+      name: 'UAT_Result_SignOff.pdf',
+      size: 142050,
+      type: 'application/pdf',
+      uploadedAt: '2026-09-16 09:30',
     },
-    submittedAt: '2026-09-10 17:15:00 WIB',
-    mentorFeedback: 'Analisis arsitektur sangat mendalam dan terstruktur rapi. Teruskan!',
-    mentorApprovedAt: '2026-09-10 18:00:00 WIB',
+    isDeleted: false,
   },
   {
-    id: 'entry-2026-09-11',
-    date: '2026-09-11',
-    periodId: 2,
-    attendanceType: 'Hadir',
-    status: 'hadir_disetujui',
-    activityDescription:
-      'Menghadiri sesi 1-on-1 sprint review bersama Mas Rian Prasetyo. Mengulas capaian bulan pertama dan menyusun rencana otomatisasi testing endpoint autentikasi.',
-    learnings:
-      'Mengetahui strategi pengujian integration test berbasis testcontainer agar lingkungan test database tetap terisolasi dan deterministik.',
-    challenges:
-      'Perbedaan konfigurasi environment variable antara mesin development lokal dengan runner GitHub Actions.',
-    location: {
-      latitude: -6.2088,
-      longitude: 106.8456,
-      address: 'Kantor Pusat Teknologi, Jakarta Selatan',
-      verified: true,
-      timestamp: '2026-09-11 08:45:22 WIB',
-    },
-    submittedAt: '2026-09-11 17:30:10 WIB',
-    mentorFeedback: 'Catatan progres sangat baik, saran pengujian sudah mulai diimplementasikan.',
-    mentorApprovedAt: '2026-09-11 19:10:00 WIB',
+    id: 'LB-000002',
+    tanggal: '2026-09-15',
+    judul: 'Pengembangan Komponen Filter & Pencarian Multi-field',
+    kategori: 'Development',
+    status: 'Completed',
+    deskripsi:
+      'Mengimplementasikan filter dinamis berdasarkan rentang tanggal, kategori aktivitas, dan status logbook dengan performa query lokal tanpa lag.',
+    catatan: 'Menambahkan debounce pada kolom pencarian teks untuk efisiensi render.',
+    createdBy: 'Farhan Pratama',
+    createdDate: '2026-09-15 08:45',
+    updatedBy: 'Farhan Pratama',
+    updatedDate: '2026-09-15 17:00',
+    isDeleted: false,
   },
   {
-    id: 'entry-2026-09-14',
-    date: '2026-09-14',
-    periodId: 2,
-    attendanceType: 'Hadir',
-    status: 'hadir_disetujui',
-    activityDescription:
-      'Mengembangkan skrip automated integration tests untuk pipeline CI/CD. Menambahkan benchmark performance testing menggunakan K6 untuk menguji response latency.',
-    learnings:
-      'Mendapatkan wawasan mengenai p95 dan p99 latency threshold serta pentingnya connection pooling pada PostgreSQL client.',
-    challenges:
-      'Beberapa query analitis lambat saat dieksekusi dengan volume data 100.000 records sintetis.',
-    location: {
-      latitude: -6.2088,
-      longitude: 106.8456,
-      address: 'Kantor Pusat Teknologi, Jakarta Selatan',
-      verified: true,
-      timestamp: '2026-09-14 08:35:40 WIB',
+    id: 'LB-000003',
+    tanggal: '2026-09-15',
+    judul: 'Daily Standup Meeting & Sprint Planning',
+    kategori: 'Meeting',
+    status: 'Completed',
+    deskripsi:
+      'Menghadiri rapat sinkronisasi harian bersama tim teknis dan Product Manager untuk mereview progress sprint dan identifikasi potensi kendala integrasi.',
+    catatan: 'Tidak ada blocker utama untuk rilis minggu ini.',
+    createdBy: 'Farhan Pratama',
+    createdDate: '2026-09-15 09:00',
+    isDeleted: false,
+  },
+  {
+    id: 'LB-000004',
+    tanggal: '2026-09-14',
+    judul: 'Investigasi Kendala Latency pada Database Replica',
+    kategori: 'Issue/Incident',
+    status: 'Completed',
+    deskripsi:
+      'Menganalisis lonjakan response time pada read-replica cluster database PostgreSQL serta melakukan optimalisasi query index.',
+    catatan: 'Indeks komposit ditambahkan pada tabel audit trail, response time turun dari 450ms menjadi 18ms.',
+    createdBy: 'Budi Santoso',
+    createdDate: '2026-09-14 13:20',
+    updatedBy: 'Budi Santoso',
+    updatedDate: '2026-09-14 16:40',
+    attachment: {
+      id: 'att-2',
+      name: 'Incident_PostMortem_Report.pdf',
+      size: 284000,
+      type: 'application/pdf',
+      uploadedAt: '2026-09-14 16:40',
     },
-    submittedAt: '2026-09-14 17:45:00 WIB',
-    mentorFeedback: 'Coverage automated test naik ke 88%. Kerja luar biasa!',
-    mentorApprovedAt: '2026-09-14 20:00:00 WIB',
+    isDeleted: false,
+  },
+  {
+    id: 'LB-000005',
+    tanggal: '2026-09-14',
+    judul: 'Penyusunan Dokumentasi Teknis API & Data Dictionary',
+    kategori: 'Documentation',
+    status: 'In Progress',
+    deskripsi:
+      'Menulis spesifikasi OpenAPI untuk endpoint logbook dan menyusun panduan integrasi bagi pengembang internal.',
+    catatan: 'Progres saat ini mencapai 75%, menunggu validasi skema audit trail dari tech lead.',
+    createdBy: 'Farhan Pratama',
+    createdDate: '2026-09-14 10:15',
+    isDeleted: false,
+  },
+  {
+    id: 'LB-000006',
+    tanggal: '2026-09-13',
+    judul: 'Pemeliharaan Rutin Server Staging & Update Security Patch',
+    kategori: 'Maintenance',
+    status: 'Completed',
+    deskripsi:
+      'Menerapkan pembaruan keamanan sistem operasi dan dependensi library pada node server lingkungan staging.',
+    catatan: 'Proses restart service berjalan mulus tanpa insiden.',
+    createdBy: 'Budi Santoso',
+    createdDate: '2026-09-13 20:00',
+    isDeleted: false,
+  },
+  {
+    id: 'LB-000007',
+    tanggal: '2026-09-12',
+    judul: 'Monitoring Beban Trafik dan Resource Utilization',
+    kategori: 'Monitoring',
+    status: 'Completed',
+    deskripsi:
+      'Memantau metrik CPU, memory, dan network I/O selama jam kerja sibuk untuk memverifikasi kestabilan service.',
+    catatan: 'Rata-rata penggunaan CPU berada pada kisaran 38%, memori aman di 52%.',
+    createdBy: 'Siti Nurhaliza',
+    createdDate: '2026-09-12 11:00',
+    isDeleted: false,
+  },
+  {
+    id: 'LB-000008',
+    tanggal: '2026-09-11',
+    judul: 'Analisis Kebutuhan Role-Based Access Control (RBAC)',
+    kategori: 'Analysis',
+    status: 'Submitted',
+    deskripsi:
+      'Melakukan analisis matriks kewenangan antara peran User, Supervisor, Admin, dan Viewer agar sesuai standar tata kelola kepatuhan perusahaan.',
+    catatan: 'Draf dokumen matriks telah diserahkan untuk direview oleh tim Governance.',
+    createdBy: 'Farhan Pratama',
+    createdDate: '2026-09-11 14:30',
+    isDeleted: false,
+  },
+  {
+    id: 'LB-000009',
+    tanggal: '2026-09-10',
+    judul: 'Eksplorasi Framework Frontend & Arsitektur Komponen',
+    kategori: 'Development',
+    status: 'Draft',
+    deskripsi:
+      'Meneliti struktur arsitektur modular yang ringan, maintainable, dan bebas ketergantungan kompleks untuk antarmuka web logbook.',
+    catatan: 'Masih berupa catatan draf riset teknis awal.',
+    createdBy: 'Farhan Pratama',
+    createdDate: '2026-09-10 15:45',
+    isDeleted: false,
+  },
+];
+
+const INITIAL_AUDIT_TRAILS: AuditTrailRecord[] = [
+  {
+    id: 'aud-1',
+    logbookId: 'LB-000001',
+    action: 'Create',
+    changedBy: 'Farhan Pratama',
+    changedDate: '16/09/2026 09:30',
+    newValue: 'In Progress',
+  },
+  {
+    id: 'aud-2',
+    logbookId: 'LB-000001',
+    action: 'Edit',
+    fieldChanged: 'Status',
+    oldValue: 'In Progress',
+    newValue: 'Completed',
+    changedBy: 'Siti Nurhaliza',
+    changedDate: '16/09/2026 11:15',
+  },
+  {
+    id: 'aud-3',
+    logbookId: 'LB-000004',
+    action: 'Create',
+    changedBy: 'Budi Santoso',
+    changedDate: '14/09/2026 13:20',
+    newValue: 'Submitted',
+  },
+  {
+    id: 'aud-4',
+    logbookId: 'LB-000004',
+    action: 'Edit',
+    fieldChanged: 'Status',
+    oldValue: 'Submitted',
+    newValue: 'Completed',
+    changedBy: 'Budi Santoso',
+    changedDate: '14/09/2026 16:40',
   },
 ];
 
 export const storageService = {
-  getProfile(): UserProfile {
-    const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
+  // Current User Management
+  getCurrentUser(): CurrentUser {
+    const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(initialProfile));
-      return initialProfile;
+      const defaultUser = AVAILABLE_USERS[0];
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(defaultUser));
+      return defaultUser;
     }
     try {
       return JSON.parse(raw);
     } catch {
-      return initialProfile;
+      return AVAILABLE_USERS[0];
     }
   },
 
-  updateProfile(profile: Partial<UserProfile>): UserProfile {
-    const current = this.getProfile();
-    const updated = { ...current, ...profile };
-    localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
-    return updated;
+  setCurrentUserRole(role: UserRole): CurrentUser {
+    const found = AVAILABLE_USERS.find((u) => u.role === role) || AVAILABLE_USERS[0];
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(found));
+    return found;
   },
 
-  getPeriods(): InternshipPeriod[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.PERIODS);
+  // Logbook CRUD
+  getAllLogbooks(includeDeleted = false): LogbookRecord[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.LOGBOOKS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.PERIODS, JSON.stringify(initialPeriods));
-      return initialPeriods;
+      localStorage.setItem(STORAGE_KEYS.LOGBOOKS, JSON.stringify(INITIAL_LOGBOOKS));
+      return INITIAL_LOGBOOKS;
+    }
+    try {
+      const list: LogbookRecord[] = JSON.parse(raw);
+      return includeDeleted ? list : list.filter((item) => !item.isDeleted);
+    } catch {
+      return INITIAL_LOGBOOKS;
+    }
+  },
+
+  getLogbookById(id: string): LogbookRecord | undefined {
+    const list = this.getAllLogbooks(true);
+    return list.find((item) => item.id === id);
+  },
+
+  generateNextLogbookId(): string {
+    const list = this.getAllLogbooks(true);
+    let maxNum = 0;
+    for (const item of list) {
+      const match = item.id.match(/^LB-(\d+)$/);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n > maxNum) maxNum = n;
+      }
+    }
+    const nextNum = maxNum + 1;
+    return `LB-${String(nextNum).padStart(6, '0')}`;
+  },
+
+  createLogbook(
+    data: Omit<LogbookRecord, 'id' | 'createdDate' | 'isDeleted' | 'createdBy'>,
+    authorName: string
+  ): { success: boolean; data?: LogbookRecord; message?: string } {
+    try {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const createdDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+        now.getDate()
+      )} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+      const newId = this.generateNextLogbookId();
+      const newRecord: LogbookRecord = {
+        ...data,
+        id: newId,
+        createdBy: authorName,
+        createdDate,
+        isDeleted: false,
+      };
+
+      const list = this.getAllLogbooks(true);
+      list.unshift(newRecord);
+      localStorage.setItem(STORAGE_KEYS.LOGBOOKS, JSON.stringify(list));
+
+      // Audit Trail for creation
+      this.addAuditTrail({
+        logbookId: newId,
+        action: 'Create',
+        fieldChanged: 'Status',
+        oldValue: '-',
+        newValue: newRecord.status,
+        changedBy: authorName,
+      });
+
+      return { success: true, data: newRecord };
+    } catch (err) {
+      return { success: false, message: 'Logbook gagal disimpan. Silakan coba kembali.' };
+    }
+  },
+
+  updateLogbook(
+    id: string,
+    updates: Partial<Omit<LogbookRecord, 'id' | 'createdDate' | 'createdBy' | 'isDeleted'>>,
+    editorName: string
+  ): { success: boolean; data?: LogbookRecord; message?: string } {
+    try {
+      const list = this.getAllLogbooks(true);
+      const index = list.findIndex((item) => item.id === id);
+      if (index === -1) {
+        return { success: false, message: 'Data logbook tidak ditemukan.' };
+      }
+
+      const existing = list[index];
+
+      // BR-07: Logbook yang telah berstatus final/completed tidak dapat diubah (unless status is being updated by admin/supervisor)
+      if (existing.status === 'Completed' && updates.status === undefined) {
+        return {
+          success: false,
+          message: 'Logbook yang telah berstatus Completed tidak dapat diubah.',
+        };
+      }
+
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const updatedDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+        now.getDate()
+      )} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+      // Detect field changes for audit trail
+      if (updates.status && updates.status !== existing.status) {
+        this.addAuditTrail({
+          logbookId: id,
+          action: 'Edit',
+          fieldChanged: 'Status',
+          oldValue: existing.status,
+          newValue: updates.status,
+          changedBy: editorName,
+        });
+      }
+
+      if (updates.judul && updates.judul !== existing.judul) {
+        this.addAuditTrail({
+          logbookId: id,
+          action: 'Edit',
+          fieldChanged: 'Judul Aktivitas',
+          oldValue: existing.judul,
+          newValue: updates.judul,
+          changedBy: editorName,
+        });
+      }
+
+      if (updates.kategori && updates.kategori !== existing.kategori) {
+        this.addAuditTrail({
+          logbookId: id,
+          action: 'Edit',
+          fieldChanged: 'Kategori',
+          oldValue: existing.kategori,
+          newValue: updates.kategori,
+          changedBy: editorName,
+        });
+      }
+
+      const updatedRecord: LogbookRecord = {
+        ...existing,
+        ...updates,
+        updatedBy: editorName,
+        updatedDate,
+      };
+
+      list[index] = updatedRecord;
+      localStorage.setItem(STORAGE_KEYS.LOGBOOKS, JSON.stringify(list));
+
+      return { success: true, data: updatedRecord };
+    } catch (err) {
+      return { success: false, message: 'Logbook gagal disimpan. Silakan coba kembali.' };
+    }
+  },
+
+  // Soft delete implementation according to PRD section 14
+  deleteLogbook(id: string, deleterName: string): { success: boolean; message?: string } {
+    try {
+      const list = this.getAllLogbooks(true);
+      const index = list.findIndex((item) => item.id === id);
+      if (index === -1) {
+        return { success: false, message: 'Data logbook tidak ditemukan.' };
+      }
+
+      list[index].isDeleted = true;
+      localStorage.setItem(STORAGE_KEYS.LOGBOOKS, JSON.stringify(list));
+
+      // Record in audit trail
+      this.addAuditTrail({
+        logbookId: id,
+        action: 'Delete',
+        fieldChanged: 'isDeleted',
+        oldValue: 'Active',
+        newValue: 'Deleted (Soft Delete)',
+        changedBy: deleterName,
+      });
+
+      return { success: true };
+    } catch {
+      return { success: false, message: 'Gagal menghapus logbook.' };
+    }
+  },
+
+  // Audit Trail
+  getAllAuditTrails(): AuditTrailRecord[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.AUDIT_TRAIL);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.AUDIT_TRAIL, JSON.stringify(INITIAL_AUDIT_TRAILS));
+      return INITIAL_AUDIT_TRAILS;
     }
     try {
       return JSON.parse(raw);
     } catch {
-      return initialPeriods;
+      return INITIAL_AUDIT_TRAILS;
     }
   },
 
-  getEntries(): LogbookEntry[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.ENTRIES);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(initialEntries));
-      return initialEntries;
-    }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return initialEntries;
-    }
+  getAuditTrailsByLogbookId(logbookId: string): AuditTrailRecord[] {
+    const all = this.getAllAuditTrails();
+    return all.filter((a) => a.logbookId === logbookId);
   },
 
-  getEntryByDate(date: string): LogbookEntry | undefined {
-    const entries = this.getEntries();
-    return entries.find((e) => e.date === date);
-  },
+  addAuditTrail(item: Omit<AuditTrailRecord, 'id' | 'changedDate'>): void {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const changedDate = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(
+      now.getHours()
+    )}:${pad(now.getMinutes())}`;
 
-  saveEntry(entryData: Omit<LogbookEntry, 'id'> & { id?: string }): LogbookEntry {
-    const entries = this.getEntries();
-    const id = entryData.id || `entry-${entryData.date}-${Date.now()}`;
-    const newEntry: LogbookEntry = {
-      ...entryData,
-      id,
+    const newRecord: AuditTrailRecord = {
+      ...item,
+      id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      changedDate,
     };
 
-    const existingIndex = entries.findIndex((e) => e.date === newEntry.date);
-    let updatedEntries: LogbookEntry[];
-    if (existingIndex >= 0) {
-      updatedEntries = [...entries];
-      updatedEntries[existingIndex] = newEntry;
-    } else {
-      updatedEntries = [...entries, newEntry];
+    const list = this.getAllAuditTrails();
+    list.unshift(newRecord);
+    localStorage.setItem(STORAGE_KEYS.AUDIT_TRAIL, JSON.stringify(list));
+  },
+
+  // Search, Filter, and Sort Helper
+  filterAndSortLogbooks(
+    list: LogbookRecord[],
+    filter: LogbookFilterState,
+    sortField: SortField = 'tanggal',
+    sortDir: SortDirection = 'desc',
+    currentUserRole: UserRole,
+    currentUserName: string
+  ): LogbookRecord[] {
+    let result = [...list];
+
+    // Role-based visibility check (FR-01, Section 6)
+    // User can only see their own logbooks, while Supervisor/Admin/Viewer can see all
+    if (currentUserRole === 'User') {
+      result = result.filter((item) => item.createdBy === currentUserName);
     }
 
-    localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(updatedEntries));
-    this.clearDraft(newEntry.date);
-    return newEntry;
-  },
-
-  deleteEntry(id: string): void {
-    const entries = this.getEntries();
-    const updated = entries.filter((e) => e.id !== id);
-    localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(updated));
-  },
-
-  getCurriculum(periodId?: number): CurriculumModule[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.CURRICULUM);
-    const all: CurriculumModule[] = raw ? JSON.parse(raw) : initialCurriculum;
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.CURRICULUM, JSON.stringify(initialCurriculum));
+    // 1. Search (AC-06, Section 15): search by Judul, ID, Deskripsi, or CreatedBy
+    if (filter.search.trim()) {
+      const q = filter.search.toLowerCase().trim();
+      result = result.filter(
+        (item) =>
+          item.judul.toLowerCase().includes(q) ||
+          item.id.toLowerCase().includes(q) ||
+          item.deskripsi.toLowerCase().includes(q) ||
+          item.createdBy.toLowerCase().includes(q)
+      );
     }
-    if (periodId !== undefined) {
-      return all.filter((c) => c.periodId === periodId);
+
+    // 2. Date Range Filter (Section 16)
+    if (filter.startDate) {
+      result = result.filter((item) => item.tanggal >= filter.startDate);
     }
-    return all;
-  },
-
-  getEvaluations(): PeriodEvaluation[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.EVALUATIONS);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.EVALUATIONS, JSON.stringify(initialEvaluations));
-      return initialEvaluations;
+    if (filter.endDate) {
+      result = result.filter((item) => item.tanggal <= filter.endDate);
     }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return initialEvaluations;
+
+    // 3. Category Filter
+    if (filter.kategori && filter.kategori !== 'All') {
+      result = result.filter((item) => item.kategori === filter.kategori);
     }
-  },
 
-  getEvaluation(periodId: number): PeriodEvaluation | undefined {
-    const all = this.getEvaluations();
-    return all.find((e) => e.periodId === periodId);
-  },
-
-  getStipends(): StipendDetail[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.STIPENDS);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.STIPENDS, JSON.stringify(initialStipends));
-      return initialStipends;
+    // 4. Status Filter
+    if (filter.status && filter.status !== 'All') {
+      result = result.filter((item) => item.status === filter.status);
     }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return initialStipends;
+
+    // 5. CreatedBy Filter (if specified and not 'All')
+    if (filter.createdBy && filter.createdBy !== 'All') {
+      result = result.filter((item) => item.createdBy === filter.createdBy);
     }
+
+    // 6. Sorting (Section 17)
+    result.sort((a, b) => {
+      let valA: string = '';
+      let valB: string = '';
+
+      switch (sortField) {
+        case 'tanggal':
+          valA = a.tanggal;
+          valB = b.tanggal;
+          break;
+        case 'createdDate':
+          valA = a.createdDate;
+          valB = b.createdDate;
+          break;
+        case 'updatedDate':
+          valA = a.updatedDate || a.createdDate;
+          valB = b.updatedDate || b.createdDate;
+          break;
+        case 'judul':
+          valA = a.judul.toLowerCase();
+          valB = b.judul.toLowerCase();
+          break;
+        default:
+          valA = a.tanggal;
+          valB = b.tanggal;
+      }
+
+      if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
   },
 
-  getStipend(periodId: number): StipendDetail | undefined {
-    const all = this.getStipends();
-    return all.find((s) => s.periodId === periodId);
+  // Reset to default sample data
+  resetToDefault(): void {
+    localStorage.setItem(STORAGE_KEYS.LOGBOOKS, JSON.stringify(INITIAL_LOGBOOKS));
+    localStorage.setItem(STORAGE_KEYS.AUDIT_TRAIL, JSON.stringify(INITIAL_AUDIT_TRAILS));
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(AVAILABLE_USERS[0]));
   },
 
-  getAnnouncements(): Announcement[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.ANNOUNCEMENTS);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.ANNOUNCEMENTS, JSON.stringify(initialAnnouncements));
-      return initialAnnouncements;
-    }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return initialAnnouncements;
-    }
+  // Export & Import backup
+  exportBackupJson(): string {
+    const data = {
+      exportedAt: new Date().toISOString(),
+      logbooks: this.getAllLogbooks(true),
+      auditTrails: this.getAllAuditTrails(),
+    };
+    return JSON.stringify(data, null, 2);
   },
 
-  markAnnouncementRead(id: string): void {
-    const list = this.getAnnouncements();
-    const updated = list.map((a) => (a.id === id ? { ...a, isNew: false } : a));
-    localStorage.setItem(STORAGE_KEYS.ANNOUNCEMENTS, JSON.stringify(updated));
-  },
-
-  getDraft(date: string): Partial<LogbookEntry> | null {
-    try {
-      const raw = localStorage.getItem(`${STORAGE_KEYS.DRAFTS}_${date}`);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  },
-
-  saveDraft(date: string, draft: Partial<LogbookEntry>): void {
-    try {
-      localStorage.setItem(`${STORAGE_KEYS.DRAFTS}_${date}`, JSON.stringify(draft));
-    } catch (e) {
-      console.warn('Draft save error', e);
-    }
-  },
-
-  clearDraft(date: string): void {
-    localStorage.removeItem(`${STORAGE_KEYS.DRAFTS}_${date}`);
-  },
-
-  resetToDefaultData(): void {
-    localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(initialProfile));
-    localStorage.setItem(STORAGE_KEYS.PERIODS, JSON.stringify(initialPeriods));
-    localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(initialEntries));
-    localStorage.setItem(STORAGE_KEYS.CURRICULUM, JSON.stringify(initialCurriculum));
-    localStorage.setItem(STORAGE_KEYS.EVALUATIONS, JSON.stringify(initialEvaluations));
-    localStorage.setItem(STORAGE_KEYS.STIPENDS, JSON.stringify(initialStipends));
-    localStorage.setItem(STORAGE_KEYS.ANNOUNCEMENTS, JSON.stringify(initialAnnouncements));
-  },
-
-  exportAllData(): string {
-    return JSON.stringify(
-      {
-        profile: this.getProfile(),
-        periods: this.getPeriods(),
-        entries: this.getEntries(),
-        curriculum: this.getCurriculum(),
-        evaluations: this.getEvaluations(),
-        stipends: this.getStipends(),
-        announcements: this.getAnnouncements(),
-        exportedAt: new Date().toISOString(),
-      },
-      null,
-      2
-    );
-  },
-
-  importData(jsonString: string): boolean {
+  importBackupJson(jsonString: string): boolean {
     try {
       const parsed = JSON.parse(jsonString);
-      if (parsed.profile) localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(parsed.profile));
-      if (parsed.entries) localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(parsed.entries));
-      if (parsed.evaluations) localStorage.setItem(STORAGE_KEYS.EVALUATIONS, JSON.stringify(parsed.evaluations));
-      if (parsed.stipends) localStorage.setItem(STORAGE_KEYS.STIPENDS, JSON.stringify(parsed.stipends));
+      if (Array.isArray(parsed.logbooks)) {
+        localStorage.setItem(STORAGE_KEYS.LOGBOOKS, JSON.stringify(parsed.logbooks));
+      }
+      if (Array.isArray(parsed.auditTrails)) {
+        localStorage.setItem(STORAGE_KEYS.AUDIT_TRAIL, JSON.stringify(parsed.auditTrails));
+      }
       return true;
-    } catch (e) {
-      console.error('Import failed', e);
+    } catch {
       return false;
     }
   },

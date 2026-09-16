@@ -1,431 +1,336 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  MapPin,
-  CheckCircle2,
-  UploadCloud,
-  Trash2,
-} from 'lucide-react';
-import confetti from 'canvas-confetti';
-import type { LogbookEntry, AttendanceStatus } from '../types';
-import { storageService } from '../services/storageService';
+import { X, Upload, Trash2, Paperclip, AlertCircle } from 'lucide-react';
+import type {
+  LogbookRecord,
+  LogbookCategory,
+  LogbookStatus,
+  AttachmentFile,
+} from '../types';
 
-interface LogbookFormModalProps {
+interface FormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  date: string; // YYYY-MM-DD
-  periodId: number;
-  existingEntry?: LogbookEntry;
-  onSuccess: (savedEntry: LogbookEntry) => void;
+  onSave: (formData: {
+    tanggal: string;
+    judul: string;
+    kategori: LogbookCategory;
+    deskripsi: string;
+    status: LogbookStatus;
+    catatan?: string;
+    attachment?: AttachmentFile;
+  }) => void;
+  initialData?: LogbookRecord | null;
+  categories: LogbookCategory[];
+  statuses: LogbookStatus[];
 }
 
-const MIN_CHARS = 100;
-
-export const LogbookFormModal: React.FC<LogbookFormModalProps> = ({
+export const LogbookFormModal: React.FC<FormModalProps> = ({
   isOpen,
   onClose,
-  date,
-  periodId,
-  existingEntry,
-  onSuccess,
+  onSave,
+  initialData,
+  categories,
+  statuses,
 }) => {
-  const [attendanceType, setAttendanceType] = useState<
-    'Hadir' | 'Hadir (WFH)' | 'Izin' | 'Sakit' | 'Dinas Luar'
-  >(existingEntry?.attendanceType || 'Hadir');
-  const [activityDescription, setActivityDescription] = useState(
-    existingEntry?.activityDescription || ''
-  );
-  const [learnings, setLearnings] = useState(existingEntry?.learnings || '');
-  const [challenges, setChallenges] = useState(existingEntry?.challenges || '');
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [attachments, setAttachments] = useState<string[]>(existingEntry?.attachments || []);
+  const isEditing = Boolean(initialData);
 
-  const [locationStatus, setLocationStatus] = useState<
-    'idle' | 'locating' | 'success' | 'error'
-  >(existingEntry?.location ? 'success' : 'idle');
-  const [coords, setCoords] = useState<{ lat: number; lng: number; address: string } | null>(
-    existingEntry?.location
-      ? {
-          lat: existingEntry.location.latitude,
-          lng: existingEntry.location.longitude,
-          address: existingEntry.location.address || 'Jakarta Selatan, DKI Jakarta',
-        }
-      : null
-  );
+  const [tanggal, setTanggal] = useState<string>('');
+  const [judul, setJudul] = useState<string>('');
+  const [kategori, setKategori] = useState<LogbookCategory>('Development');
+  const [deskripsi, setDeskripsi] = useState<string>('');
+  const [status, setStatus] = useState<LogbookStatus>('Submitted');
+  const [catatan, setCatatan] = useState<string>('');
+  const [attachment, setAttachment] = useState<AttachmentFile | undefined>(undefined);
 
-  const formatDateTitle = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr);
-      return new Intl.DateTimeFormat('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }).format(d);
-    } catch {
-      return dateStr;
-    }
-  };
+  const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Initialize or reset form state
   useEffect(() => {
-    if (isOpen) {
-      if (existingEntry) {
-        setAttendanceType(existingEntry.attendanceType);
-        setActivityDescription(existingEntry.activityDescription);
-        setLearnings(existingEntry.learnings);
-        setChallenges(existingEntry.challenges);
-        setAttachments(existingEntry.attachments || []);
-        if (existingEntry.location) {
-          setCoords({
-            lat: existingEntry.location.latitude,
-            lng: existingEntry.location.longitude,
-            address: existingEntry.location.address || 'Jakarta Selatan, DKI Jakarta',
-          });
-          setLocationStatus('success');
-        }
-      } else {
-        const draft = storageService.getDraft(date);
-        if (draft) {
-          if (draft.attendanceType) setAttendanceType(draft.attendanceType as any);
-          if (draft.activityDescription) setActivityDescription(draft.activityDescription);
-          if (draft.learnings) setLearnings(draft.learnings);
-          if (draft.challenges) setChallenges(draft.challenges);
-        }
-        detectLocation();
-      }
+    if (initialData) {
+      setTanggal(initialData.tanggal || '');
+      setJudul(initialData.judul || '');
+      setKategori(initialData.kategori || 'Development');
+      setDeskripsi(initialData.deskripsi || '');
+      setStatus(initialData.status || 'Submitted');
+      setCatatan(initialData.catatan || '');
+      setAttachment(initialData.attachment);
+    } else {
+      // Default to today's date YYYY-MM-DD
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      setTanggal(todayStr);
+      setJudul('');
+      setKategori('Development');
+      setDeskripsi('');
+      setStatus('In Progress');
+      setCatatan('');
+      setAttachment(undefined);
     }
-  }, [isOpen, date, existingEntry]);
+    setValidationError(null);
+  }, [initialData, isOpen]);
 
-  useEffect(() => {
-    if (isOpen && !existingEntry && (activityDescription || learnings || challenges)) {
-      const timer = setTimeout(() => {
-        storageService.saveDraft(date, {
-          attendanceType,
-          activityDescription,
-          learnings,
-          challenges,
-        });
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [activityDescription, learnings, challenges, attendanceType, date, isOpen, existingEntry]);
+  if (!isOpen) return null;
 
-  const detectLocation = () => {
-    setLocationStatus('locating');
-    if (!navigator.geolocation) {
-      setCoords({
-        lat: -6.2088,
-        lng: 106.8456,
-        address: 'Kantor Pusat Teknologi, Jakarta Selatan',
-      });
-      setLocationStatus('success');
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Max 5MB file size limit
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert('Ukuran file maksimal adalah 5MB.');
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({
-          lat: Number(pos.coords.latitude.toFixed(5)),
-          lng: Number(pos.coords.longitude.toFixed(5)),
-          address: 'Lokasi Terverifikasi',
-        });
-        setLocationStatus('success');
-      },
-      () => {
-        setCoords({
-          lat: -6.2088,
-          lng: 106.8456,
-          address: 'Jakarta Selatan (Terverifikasi)',
-        });
-        setLocationStatus('success');
-      },
-      { timeout: 8000, enableHighAccuracy: true }
-    );
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
     const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setAttachments((prev) => [...prev, reader.result as string]);
-      }
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setAttachment({
+        id: `att-${Date.now()}`,
+        name: file.name,
+        size: file.size,
+        type: file.type || 'application/octet-stream',
+        dataUrl,
+        uploadedAt: new Date().toISOString(),
+      });
     };
     reader.readAsDataURL(file);
   };
 
-  const removeAttachment = (index: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveAttachment = () => {
+    setAttachment(undefined);
   };
-
-  const isActivityValid = activityDescription.trim().length >= MIN_CHARS;
-  const isLearningsValid = learnings.trim().length >= MIN_CHARS;
-  const isChallengesValid = challenges.trim().length >= MIN_CHARS;
-  const canSubmit = isActivityValid && isLearningsValid && isChallengesValid && isConfirmed;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
 
-    const status: AttendanceStatus = 'menunggu_mentor';
+    // Mandatory Field Validation according to PRD Section 10
+    if (
+      !tanggal.trim() ||
+      !judul.trim() ||
+      !kategori ||
+      !deskripsi.trim() ||
+      !status
+    ) {
+      setValidationError('Mohon lengkapi seluruh field yang wajib diisi.');
+      return;
+    }
 
-    const entryToSave: Omit<LogbookEntry, 'id'> & { id?: string } = {
-      id: existingEntry?.id,
-      date,
-      periodId,
-      attendanceType,
-      status: existingEntry?.status || status,
-      activityDescription,
-      learnings,
-      challenges,
-      location: coords
-        ? {
-            latitude: coords.lat,
-            longitude: coords.lng,
-            address: coords.address,
-            verified: true,
-            timestamp: new Date().toLocaleTimeString('id-ID'),
-          }
-        : undefined,
-      attachments,
-      submittedAt: new Date().toLocaleString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }) + ' WIB',
-      mentorFeedback: existingEntry?.mentorFeedback,
-      mentorApprovedAt: existingEntry?.mentorApprovedAt,
-    };
+    setValidationError(null);
 
-    const saved = storageService.saveEntry(entryToSave);
-
-    try {
-      confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
-    } catch {}
-
-    onSuccess(saved);
-    onClose();
+    onSave({
+      tanggal: tanggal.trim(),
+      judul: judul.trim(),
+      kategori,
+      deskripsi: deskripsi.trim(),
+      status,
+      catatan: catatan.trim() || undefined,
+      attachment,
+    });
   };
 
-  if (!isOpen) return null;
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs no-print overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
-        {/* Modal Header */}
-        <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div>
-            <h3 className="font-bold text-slate-900 text-sm sm:text-base">
-              {existingEntry ? 'Edit Laporan' : 'Tambah laporan'} · {formatDateTitle(date)}
+            <h3 className="font-bold text-slate-900 text-base">
+              {isEditing ? `Ubah Logbook (${initialData?.id})` : 'Tambah Logbook Baru'}
             </h3>
+            <p className="text-xs text-slate-500">
+              {isEditing
+                ? 'Perbarui informasi aktivitas logbook Anda sesuai ketentuan.'
+                : 'Lengkapi seluruh data mandatori bertanda bintang (*) untuk menyimpan logbook.'}
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto p-5 space-y-4 flex-1 text-xs sm:text-sm">
-          {/* Location Box */}
-          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center justify-between gap-3">
-            <div className="flex items-start gap-2.5">
-              <MapPin className="w-4 h-4 text-slate-600 shrink-0 mt-0.5" />
-              <div>
-                <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-                  {locationStatus === 'success' ? 'Lokasi berhasil diakses' : 'Mendeteksi lokasi...'}
-                  {locationStatus === 'success' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {coords ? `${coords.address} (${coords.lat}, ${coords.lng})` : 'Mencari sinyal GPS...'}
-                </p>
-              </div>
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
+          {/* Validation Alert */}
+          {validationError && (
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span className="font-medium text-xs">{validationError}</span>
             </div>
-            {locationStatus !== 'success' && (
-              <button
-                type="button"
-                onClick={detectLocation}
-                className="px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Tanggal */}
+            <div>
+              <label className="block font-semibold text-slate-800 mb-1">
+                Tanggal Aktivitas <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="date"
+                required
+                value={tanggal}
+                onChange={(e) => setTanggal(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
+
+            {/* Kategori */}
+            <div>
+              <label className="block font-semibold text-slate-800 mb-1">
+                Kategori Aktivitas <span className="text-rose-500">*</span>
+              </label>
+              <select
+                required
+                aria-label="Pilih Kategori Aktivitas"
+                value={kategori}
+                onChange={(e) => setKategori(e.target.value as LogbookCategory)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
               >
-                Deteksi
-              </button>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Judul Aktivitas */}
+          <div>
+            <label className="block font-semibold text-slate-800 mb-1">
+              Judul Aktivitas <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="Contoh: UAT Testing Modul Manajemen Logbook"
+              value={judul}
+              onChange={(e) => setJudul(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+            />
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block font-semibold text-slate-800 mb-1">
+              Status Logbook <span className="text-rose-500">*</span>
+            </label>
+            <select
+              required
+              aria-label="Pilih Status Logbook"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as LogbookStatus)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+            >
+              {statuses.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Alur status: Draft &rarr; Submitted &rarr; In Progress &rarr; Completed (atau Cancelled).
+            </p>
+          </div>
+
+          {/* Deskripsi */}
+          <div>
+            <label className="block font-semibold text-slate-800 mb-1">
+              Deskripsi Aktivitas <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              required
+              rows={4}
+              placeholder="Jelaskan secara detail pekerjaan yang telah dilakukan, hasil yang dicapai, atau progres teknis..."
+              value={deskripsi}
+              onChange={(e) => setDeskripsi(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900 leading-relaxed"
+            />
+          </div>
+
+          {/* Attachment Upload (PRD Section 19) */}
+          <div>
+            <label className="block font-semibold text-slate-800 mb-1">
+              Attachment / Dokumen Pendukung (Opsional)
+            </label>
+            {attachment ? (
+              <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50">
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="p-2 rounded-md bg-blue-100 text-blue-700">
+                    <Paperclip className="w-4 h-4" />
+                  </div>
+                  <div className="overflow-hidden text-xs">
+                    <p className="font-semibold text-slate-800 truncate">{attachment.name}</p>
+                    <p className="text-[11px] text-slate-500">{formatFileSize(attachment.size)}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveAttachment}
+                  title="Hapus Attachment"
+                  className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                <Upload className="w-5 h-5 text-slate-400" />
+                <span className="font-medium text-slate-700">Unggah berkas bukti aktivitas</span>
+                <span className="text-[11px] text-slate-400">
+                  Maksimal ukuran 5MB (PDF, PNG, JPG, DOCX, ZIP)
+                </span>
+                <input
+                  type="file"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.zip"
+                />
+              </label>
             )}
           </div>
 
-          {/* Kehadiran */}
+          {/* Catatan Tambahan */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kehadiran</label>
-            <select
-              value={attendanceType}
-              onChange={(e) => setAttendanceType(e.target.value as any)}
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-            >
-              <option value="Hadir">Hadir</option>
-              <option value="Hadir (WFH)">Hadir (WFH)</option>
-              <option value="Izin">Izin</option>
-              <option value="Sakit">Sakit</option>
-              <option value="Dinas Luar">Dinas Luar</option>
-            </select>
-          </div>
-
-          {/* Textarea 1: Uraian Aktivitas */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label
-                className={`text-xs font-semibold ${
-                  !isActivityValid ? 'text-red-600' : 'text-slate-700'
-                }`}
-              >
-                Uraian aktivitas
-              </label>
-              <span className="text-[11px] font-mono text-slate-500">
-                {activityDescription.trim().length}/{MIN_CHARS} karakter
-              </span>
-            </div>
-            <textarea
-              rows={3}
-              value={activityDescription}
-              onChange={(e) => setActivityDescription(e.target.value)}
-              placeholder="Tuliskan aktivitas harian..."
-              className={`w-full p-2.5 text-xs sm:text-sm rounded-lg border bg-white focus:outline-none transition-colors resize-none ${
-                !isActivityValid
-                  ? 'border-red-300 focus:border-red-500'
-                  : 'border-slate-200 focus:border-blue-600'
-              }`}
-            />
-            <p className={`text-[11px] ${!isActivityValid ? 'text-red-500 font-medium' : 'text-emerald-600'}`}>
-              {!isActivityValid ? 'Minimal 100 karakter' : '✓ Minimal 100 karakter terpenuhi'}
-            </p>
-          </div>
-
-          {/* Textarea 2: Pembelajaran */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label
-                className={`text-xs font-semibold ${
-                  !isLearningsValid ? 'text-red-600' : 'text-slate-700'
-                }`}
-              >
-                Pembelajaran yang diperoleh
-              </label>
-              <span className="text-[11px] font-mono text-slate-500">
-                {learnings.trim().length}/{MIN_CHARS} karakter
-              </span>
-            </div>
-            <textarea
-              rows={3}
-              value={learnings}
-              onChange={(e) => setLearnings(e.target.value)}
-              placeholder="Tuliskan pembelajaran yang diperoleh..."
-              className={`w-full p-2.5 text-xs sm:text-sm rounded-lg border bg-white focus:outline-none transition-colors resize-none ${
-                !isLearningsValid
-                  ? 'border-red-300 focus:border-red-500'
-                  : 'border-slate-200 focus:border-blue-600'
-              }`}
-            />
-            <p className={`text-[11px] ${!isLearningsValid ? 'text-red-500 font-medium' : 'text-emerald-600'}`}>
-              {!isLearningsValid ? 'Minimal 100 karakter' : '✓ Minimal 100 karakter terpenuhi'}
-            </p>
-          </div>
-
-          {/* Textarea 3: Kendala */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label
-                className={`text-xs font-semibold ${
-                  !isChallengesValid ? 'text-red-600' : 'text-slate-700'
-                }`}
-              >
-                Kendala yang dialami
-              </label>
-              <span className="text-[11px] font-mono text-slate-500">
-                {challenges.trim().length}/{MIN_CHARS} karakter
-              </span>
-            </div>
-            <textarea
-              rows={3}
-              value={challenges}
-              onChange={(e) => setChallenges(e.target.value)}
-              placeholder="Tuliskan kendala dan solusi yang Anda ambil..."
-              className={`w-full p-2.5 text-xs sm:text-sm rounded-lg border bg-white focus:outline-none transition-colors resize-none ${
-                !isChallengesValid
-                  ? 'border-red-300 focus:border-red-500'
-                  : 'border-slate-200 focus:border-blue-600'
-              }`}
-            />
-            <p className={`text-[11px] ${!isChallengesValid ? 'text-red-500 font-medium' : 'text-emerald-600'}`}>
-              {!isChallengesValid ? 'Minimal 100 karakter' : '✓ Minimal 100 karakter terpenuhi'}
-            </p>
-          </div>
-
-          {/* Photo upload */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700">
-              Dokumentasi Foto (Opsional)
+            <label className="block font-semibold text-slate-800 mb-1">
+              Catatan Tambahan (Opsional)
             </label>
-            <div className="flex flex-wrap gap-2 items-center">
-              {attachments.map((img, idx) => (
-                <div key={idx} className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-200">
-                  <img src={img} alt="Bukti" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(idx)}
-                    className="absolute inset-0 bg-slate-900/60 opacity-0 hover:opacity-100 flex items-center justify-center text-white"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-300" />
-                  </button>
-                </div>
-              ))}
-              <label className="w-14 h-14 rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-500 flex flex-col items-center justify-center text-slate-400 hover:text-blue-600 cursor-pointer">
-                <UploadCloud className="w-4 h-4" />
-                <span className="text-[9px] mt-0.5 font-medium">Unggah</span>
-                <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-              </label>
-            </div>
+            <textarea
+              rows={2}
+              placeholder="Tambahkan catatan khusus, informasi kendala, atau referensi tiket..."
+              value={catatan}
+              onChange={(e) => setCatatan(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+            />
           </div>
 
-          {/* Confirmation */}
-          <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isConfirmed}
-              onChange={(e) => setIsConfirmed(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded text-blue-600 border-slate-300"
-            />
-            <span className="text-xs text-slate-700 select-none">
-              Saya menyatakan telah meninjau dan memastikan isian laporan ini sudah benar.
-            </span>
-          </label>
+          {/* Footer Buttons */}
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              {isEditing ? 'Simpan Perubahan' : 'Simpan Logbook'}
+            </button>
+          </div>
         </form>
-
-        {/* Modal Footer */}
-        <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-          >
-            Batal
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className={`px-5 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
-              canSubmit
-                ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs'
-                : 'bg-blue-300 text-white cursor-not-allowed'
-            }`}
-          >
-            Simpan dan Kirim
-          </button>
-        </div>
       </div>
     </div>
   );

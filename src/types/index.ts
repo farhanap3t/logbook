@@ -1,131 +1,81 @@
-export type AttendanceStatus =
-  | 'hadir_disetujui'
-  | 'izin_disetujui'
-  | 'sakit'
-  | 'tidak_hadir'
-  | 'kehadiran_ditolak'
-  | 'perlu_tindakan'
-  | 'menunggu_mentor'
-  | 'belum_diisi'
-  | 'hari_libur'
-  | 'libur_posisi';
+export type LogbookCategory =
+  | 'Meeting'
+  | 'Development'
+  | 'Testing'
+  | 'Monitoring'
+  | 'Analysis'
+  | 'Documentation'
+  | 'Issue/Incident'
+  | 'Maintenance'
+  | 'Other';
 
-export interface LogbookEntry {
+export type LogbookStatus =
+  | 'Draft'
+  | 'Submitted'
+  | 'In Progress'
+  | 'Completed'
+  | 'Cancelled';
+
+export type UserRole = 'User' | 'Supervisor' | 'Admin' | 'Viewer';
+
+export interface AttachmentFile {
   id: string;
-  date: string; // YYYY-MM-DD
-  periodId: number;
-  attendanceType: 'Hadir' | 'Hadir (WFH)' | 'Izin' | 'Sakit' | 'Dinas Luar';
-  status: AttendanceStatus;
-  activityDescription: string;
-  learnings: string;
-  challenges: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-    address?: string;
-    verified: boolean;
-    timestamp: string;
-  };
-  attachments?: string[]; // base64 or photo URLs
-  submittedAt?: string;
-  mentorFeedback?: string;
-  mentorApprovedAt?: string;
-}
-
-export interface InternshipPeriod {
-  id: number;
-  name: string; // e.g., "Periode 1", "Periode 2"
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
-  isCurrent: boolean;
-}
-
-export interface CurriculumModule {
-  id: string;
-  periodId: number;
-  title: string;
-  type: 'Praktik' | 'Teori' | 'Proyek';
-  month: string;
-  duration: string;
-  description: string;
-  learningFocus?: string;
-  completed?: boolean;
-}
-
-export interface EvaluationAspect {
-  id: string;
-  aspect: string;
-  score: 'SB' | 'B' | 'C' | 'K';
-  notes?: string;
-}
-
-export interface CurriculumEvaluation {
-  moduleName: string;
-  score: 'Sangat Baik' | 'Baik' | 'Cukup' | 'Kurang';
-}
-
-export interface PeriodEvaluation {
-  periodId: number;
-  periodName: string;
-  status: 'Selesai' | 'Dalam Proses' | 'Belum Dimulai';
-  mentorName: string;
-  completedAt: string;
-  aspects: EvaluationAspect[];
-  curriculumAchievements: CurriculumEvaluation[];
-  mentorComment: string;
-  overallScore: number; // e.g. 3.5 out of 4.0
-}
-
-export interface StipendDetail {
-  periodId: number;
-  periodName: string;
-  dateRange: string;
-  submissionStatus: 'Diajukan' | 'Diverifikasi' | 'Cair' | 'Belum Diajukan';
-  submittedBy: string;
-  submittedAt: string;
-  nominalEstimate: number;
-  bankName: string;
-  accountNumberMasked: string;
-  accountHolder: string;
-  totalWorkingDays: number;
-  paidDays: number;
-  approvedAttendanceDays: number;
-  paidLeaveDays: number;
-  unpaidDays: number;
-  absentDays: number;
-  rejectedAttendanceDays: number;
-  noRecordDays: number;
-  unpaidLeaveDays: number;
-  nonWorkingDays: number;
-  holidays: number;
-  positionOffDays: number;
-}
-
-export interface UserProfile {
   name: string;
-  role: string;
-  email: string;
-  phone: string;
-  avatarUrl: string;
-  company: string;
-  position: string;
-  placementLocation: string;
-  internshipStartDate: string;
-  internshipEndDate: string;
-  status: 'Aktif' | 'Selesai' | 'Mengundurkan Diri';
-  mentorName: string;
-  mentorEmail: string;
-  universityName: string;
-  major: string;
-  studentId: string;
+  size: number; // in bytes
+  type: string;
+  dataUrl?: string; // base64 representation for preview/download
+  uploadedAt: string;
 }
 
-export interface Announcement {
+export interface LogbookRecord {
+  id: string; // LB-000001
+  tanggal: string; // YYYY-MM-DD
+  judul: string;
+  kategori: LogbookCategory;
+  deskripsi: string;
+  status: LogbookStatus;
+  attachment?: AttachmentFile;
+  catatan?: string;
+  createdBy: string;
+  createdDate: string; // YYYY-MM-DD HH:mm
+  updatedBy?: string;
+  updatedDate?: string; // YYYY-MM-DD HH:mm
+  isDeleted?: boolean; // soft delete
+}
+
+export interface AuditTrailRecord {
   id: string;
-  title: string;
-  date: string;
-  category: 'Penting' | 'Informasi' | 'Kegiatan';
-  content: string;
-  isNew: boolean;
+  logbookId: string;
+  action: 'Create' | 'Edit' | 'Delete';
+  fieldChanged?: string;
+  oldValue?: string;
+  newValue?: string;
+  changedBy: string;
+  changedDate: string; // DD/MM/YYYY HH:mm
 }
 
+export interface LogbookFilterState {
+  search: string;
+  startDate: string;
+  endDate: string;
+  kategori: string; // 'All' or specific category
+  status: string; // 'All' or specific status
+  createdBy: string; // 'All' or user name
+}
+
+export type SortField = 'tanggal' | 'createdDate' | 'updatedDate' | 'judul';
+export type SortDirection = 'asc' | 'desc';
+
+export interface ToastMessage {
+  id: string;
+  type: 'success' | 'error' | 'validation';
+  message: string;
+}
+
+export interface CurrentUser {
+  id: string;
+  name: string;
+  role: UserRole;
+  department: string;
+  email: string;
+}
