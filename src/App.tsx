@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { storageService, AVAILABLE_USERS } from './services/storageService';
 import type {
   LogbookRecord,
@@ -11,10 +11,13 @@ import type {
   CurrentUser,
   ToastMessage,
   AttachmentFile,
+  ViewMode,
 } from './types';
 import { Header } from './components/Header';
 import { LogbookFilterBar } from './components/LogbookFilterBar';
 import { LogbookTable } from './components/LogbookTable';
+import { LogbookBoard } from './components/LogbookBoard';
+import { LogbookTimeline } from './components/LogbookTimeline';
 import { LogbookFormModal } from './components/LogbookFormModal';
 import { LogbookDetailModal } from './components/LogbookDetailModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
@@ -54,6 +57,9 @@ export function App() {
   const [auditTrails, setAuditTrails] = useState(() =>
     storageService.getAllAuditTrails()
   );
+
+  // Active view mode ('table' | 'board' | 'timeline')
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
 
   // Filter & Search states
   const [filter, setFilter] = useState<LogbookFilterState>({
@@ -97,6 +103,28 @@ export function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  // Keyboard shortcut: Press 'N' to open Add Logbook modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.key === 'n' || e.key === 'N') &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA' &&
+        !isFormOpen &&
+        !isDetailOpen &&
+        !isDeleteOpen &&
+        !isAuditModalOpen
+      ) {
+        if (currentUser.role === 'User' || currentUser.role === 'Admin') {
+          e.preventDefault();
+          handleOpenCreate();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentUser.role, isFormOpen, isDetailOpen, isDeleteOpen, isAuditModalOpen]);
+
   // Change Role simulation
   const handleRoleChange = (role: UserRole) => {
     const updated = storageService.setCurrentUserRole(role);
@@ -136,13 +164,18 @@ export function App() {
 
   // Statistics summary counters
   const stats = useMemo(() => {
-    const total = filteredLogbooks.length;
-    const completed = filteredLogbooks.filter((l) => l.status === 'Completed').length;
-    const inProgress = filteredLogbooks.filter((l) => l.status === 'In Progress').length;
-    const submitted = filteredLogbooks.filter((l) => l.status === 'Submitted').length;
-    const draft = filteredLogbooks.filter((l) => l.status === 'Draft').length;
+    // Base role visible items for KPI
+    const roleItems =
+      currentUser.role === 'User'
+        ? logbooks.filter((l) => l.createdBy === currentUser.name)
+        : logbooks;
+    const total = roleItems.length;
+    const completed = roleItems.filter((l) => l.status === 'Completed').length;
+    const inProgress = roleItems.filter((l) => l.status === 'In Progress').length;
+    const submitted = roleItems.filter((l) => l.status === 'Submitted').length;
+    const draft = roleItems.filter((l) => l.status === 'Draft').length;
     return { total, completed, inProgress, submitted, draft };
-  }, [filteredLogbooks]);
+  }, [logbooks, currentUser]);
 
   // Actions
   const handleOpenCreate = () => {
@@ -165,6 +198,48 @@ export function App() {
     setIsDeleteOpen(true);
   };
 
+  // Quick Clone
+  const handleCloneAsToday = (record: LogbookRecord) => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    setEditingRecord({
+      ...record,
+      id: '',
+      tanggal: todayStr,
+      status: 'In Progress',
+      judul: `${record.judul} (Lanjutan)`,
+    });
+    setIsFormOpen(true);
+    addToast('success', 'Aktivitas disalin sebagai draf hari ini.');
+  };
+
+  // Quick Status Transition
+  const handleQuickStatusChange = (record: LogbookRecord, newStatus: LogbookStatus) => {
+    if (record.status === newStatus) return;
+    const res = storageService.updateLogbook(
+      record.id,
+      { status: newStatus },
+      currentUser.name
+    );
+    if (res.success) {
+      setLogbooks(storageService.getAllLogbooks());
+      setAuditTrails(storageService.getAllAuditTrails());
+      addToast('success', `Status ${record.id} diubah menjadi "${newStatus}".`);
+    } else {
+      addToast('error', res.message || 'Gagal mengubah status logbook.');
+    }
+  };
+
+  // KPI Quick Filter Toggle
+  const handleToggleStatusFilter = (targetStatus: LogbookStatus | 'All') => {
+    setFilter((prev) => ({
+      ...prev,
+      status: prev.status === targetStatus ? 'All' : targetStatus,
+    }));
+  };
+
   // Save (Create or Update)
   const handleSaveForm = (formData: {
     tanggal: string;
@@ -175,7 +250,7 @@ export function App() {
     catatan?: string;
     attachment?: AttachmentFile;
   }) => {
-    if (editingRecord) {
+    if (editingRecord && editingRecord.id) {
       // Update
       const res = storageService.updateLogbook(
         editingRecord.id,
@@ -273,77 +348,170 @@ export function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
-        {/* KPI / Metric Counters Strip */}
+        {/* Interactive KPI / Metric Counters Strip (Clickable to Filter) */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+          <button
+            type="button"
+            onClick={() => handleToggleStatusFilter('All')}
+            className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer shadow-2xs hover:shadow-sm ${
+              filter.status === 'All'
+                ? 'bg-slate-900 text-white border-slate-900 ring-2 ring-slate-900 ring-offset-2'
+                : 'bg-white border-slate-200 hover:border-slate-300 text-slate-900'
+            }`}
+          >
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wider block ${
+                filter.status === 'All' ? 'text-slate-300' : 'text-slate-500'
+              }`}
+            >
               Total Logbook
             </span>
-            <span className="text-xl font-extrabold text-slate-900 mt-1 block">
+            <span className="text-xl font-extrabold mt-1 block">
               {stats.total}
             </span>
-          </div>
+          </button>
 
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block">
+          <button
+            type="button"
+            onClick={() => handleToggleStatusFilter('Completed')}
+            className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer shadow-2xs hover:shadow-sm ${
+              filter.status === 'Completed'
+                ? 'bg-emerald-700 text-white border-emerald-700 ring-2 ring-emerald-600 ring-offset-2'
+                : 'bg-white border-slate-200 hover:border-emerald-300 text-emerald-700'
+            }`}
+          >
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wider block ${
+                filter.status === 'Completed' ? 'text-emerald-100' : 'text-emerald-700'
+              }`}
+            >
               Completed
             </span>
-            <span className="text-xl font-extrabold text-emerald-700 mt-1 block">
+            <span className="text-xl font-extrabold mt-1 block">
               {stats.completed}
             </span>
-          </div>
+          </button>
 
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider block">
+          <button
+            type="button"
+            onClick={() => handleToggleStatusFilter('In Progress')}
+            className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer shadow-2xs hover:shadow-sm ${
+              filter.status === 'In Progress'
+                ? 'bg-blue-700 text-white border-blue-700 ring-2 ring-blue-600 ring-offset-2'
+                : 'bg-white border-slate-200 hover:border-blue-300 text-blue-700'
+            }`}
+          >
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wider block ${
+                filter.status === 'In Progress' ? 'text-blue-100' : 'text-blue-700'
+              }`}
+            >
               In Progress
             </span>
-            <span className="text-xl font-extrabold text-blue-700 mt-1 block">
+            <span className="text-xl font-extrabold mt-1 block">
               {stats.inProgress}
             </span>
-          </div>
+          </button>
 
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-[11px] font-semibold text-sky-700 uppercase tracking-wider block">
+          <button
+            type="button"
+            onClick={() => handleToggleStatusFilter('Submitted')}
+            className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer shadow-2xs hover:shadow-sm ${
+              filter.status === 'Submitted'
+                ? 'bg-sky-700 text-white border-sky-700 ring-2 ring-sky-600 ring-offset-2'
+                : 'bg-white border-slate-200 hover:border-sky-300 text-sky-700'
+            }`}
+          >
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wider block ${
+                filter.status === 'Submitted' ? 'text-sky-100' : 'text-sky-700'
+              }`}
+            >
               Submitted
             </span>
-            <span className="text-xl font-extrabold text-sky-700 mt-1 block">
+            <span className="text-xl font-extrabold mt-1 block">
               {stats.submitted}
             </span>
-          </div>
+          </button>
 
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs col-span-2 sm:col-span-1">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block">
+          <button
+            type="button"
+            onClick={() => handleToggleStatusFilter('Draft')}
+            className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer shadow-2xs hover:shadow-sm col-span-2 sm:col-span-1 ${
+              filter.status === 'Draft'
+                ? 'bg-slate-700 text-white border-slate-700 ring-2 ring-slate-600 ring-offset-2'
+                : 'bg-white border-slate-200 hover:border-slate-400 text-slate-700'
+            }`}
+          >
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wider block ${
+                filter.status === 'Draft' ? 'text-slate-200' : 'text-slate-600'
+              }`}
+            >
               Draft
             </span>
-            <span className="text-xl font-extrabold text-slate-700 mt-1 block">
+            <span className="text-xl font-extrabold mt-1 block">
               {stats.draft}
             </span>
-          </div>
+          </button>
         </div>
 
-        {/* Filter Bar */}
+        {/* Filter Bar with View Switcher */}
         <LogbookFilterBar
           filter={filter}
           onFilterChange={setFilter}
           onOpenCreateModal={handleOpenCreate}
           userRole={currentUser.role}
+          currentUserName={currentUser.name}
           categories={CATEGORIES}
           statuses={STATUSES}
           usersList={usersList}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          resultCount={filteredLogbooks.length}
         />
 
-        {/* Data Table & Card List */}
-        <LogbookTable
-          logbooks={filteredLogbooks}
-          sortField={sortField}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onViewDetail={handleOpenDetail}
-          onEdit={handleOpenEdit}
-          onDelete={handleOpenDelete}
-          currentUserRole={currentUser.role}
-          currentUserName={currentUser.name}
-        />
+        {/* Dynamic Views: Table, Board, or Timeline */}
+        {viewMode === 'table' && (
+          <LogbookTable
+            logbooks={filteredLogbooks}
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+            onViewDetail={handleOpenDetail}
+            onEdit={handleOpenEdit}
+            onDelete={handleOpenDelete}
+            onCloneAsToday={handleCloneAsToday}
+            onQuickStatusChange={handleQuickStatusChange}
+            currentUserRole={currentUser.role}
+            currentUserName={currentUser.name}
+          />
+        )}
+
+        {viewMode === 'board' && (
+          <LogbookBoard
+            logbooks={filteredLogbooks}
+            onViewDetail={handleOpenDetail}
+            onEdit={handleOpenEdit}
+            onDelete={handleOpenDelete}
+            onQuickStatusChange={handleQuickStatusChange}
+            onOpenCreateModal={handleOpenCreate}
+            currentUserRole={currentUser.role}
+            currentUserName={currentUser.name}
+          />
+        )}
+
+        {viewMode === 'timeline' && (
+          <LogbookTimeline
+            logbooks={filteredLogbooks}
+            onViewDetail={handleOpenDetail}
+            onEdit={handleOpenEdit}
+            onDelete={handleOpenDelete}
+            onCloneAsToday={handleCloneAsToday}
+            currentUserRole={currentUser.role}
+            currentUserName={currentUser.name}
+          />
+        )}
       </main>
 
       {/* Footer */}

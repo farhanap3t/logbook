@@ -63,3 +63,4 @@ export const CategoryBadge: React.FC<{ category: LogbookCategory }> = ({ categor
     </span>
   );
 };
+

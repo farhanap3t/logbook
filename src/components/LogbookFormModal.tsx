@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Trash2, Paperclip, AlertCircle } from 'lucide-react';
+import {
+  X,
+  Upload,
+  Trash2,
+  Paperclip,
+  AlertCircle,
+  Sparkles,
+} from 'lucide-react';
 import type {
   LogbookRecord,
   LogbookCategory,
@@ -55,7 +62,6 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
       setCatatan(initialData.catatan || '');
       setAttachment(initialData.attachment);
     } else {
-      // Default to today's date YYYY-MM-DD
       const now = new Date();
       const pad = (n: number) => String(n).padStart(2, '0');
       const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
@@ -70,13 +76,26 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
     setValidationError(null);
   }, [initialData, isOpen]);
 
+  // Handle Ctrl+Enter to submit
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+        handleSubmit(fakeEvent);
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
+
   if (!isOpen) return null;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Max 5MB file size limit
     const MAX_SIZE = 5 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       alert('Ukuran file maksimal adalah 5MB.');
@@ -102,10 +121,34 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
     setAttachment(undefined);
   };
 
+  // Quick Template Injector
+  const applyTemplate = (templateType: 'meeting' | 'development' | 'testing' | 'incident') => {
+    if (templateType === 'meeting') {
+      setJudul('Daily Coordination & Sync Meeting');
+      setKategori('Meeting');
+      setDeskripsi('Menghadiri rapat koordinasi tim untuk menyelaraskan prioritas tugas harian, melaporkan progres pekerjaan sebelumnya, serta mendiskusikan dependensi antar anggota tim.');
+      setStatus('Completed');
+    } else if (templateType === 'development') {
+      setJudul('Implementasi Fitur & Refactor Komponen');
+      setKategori('Development');
+      setDeskripsi('Menulis kode fungsional untuk modul baru, memastikan integrasi state manajemen berjalan mulus, serta melakukan code cleanup sesuai panduan arsitektur.');
+      setStatus('In Progress');
+    } else if (templateType === 'testing') {
+      setJudul('Uji Kasus & Verifikasi Fungsionalitas');
+      setKategori('Testing');
+      setDeskripsi('Menjalankan pengujian fungsionalitas end-to-end terhadap alur kerja sistem, memverifikasi penanganan skenario error, dan mendokumentasikan hasil pengujian.');
+      setStatus('Completed');
+    } else if (templateType === 'incident') {
+      setJudul('Investigasi Masalah & Root Cause Analysis');
+      setKategori('Issue/Incident');
+      setDeskripsi('Menganalisis log error sistem, mereproduksi issue yang dilaporkan, mengidentifikasi akar penyebab (root cause), dan menyusun langkah perbaikan.');
+      setStatus('In Progress');
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Mandatory Field Validation according to PRD Section 10
     if (
       !tanggal.trim() ||
       !judul.trim() ||
@@ -136,6 +179,8 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  const charCount = deskripsi.length;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95">
@@ -153,7 +198,7 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -161,9 +206,49 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
 
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
+          {/* Quick Template Picker (Only for new logs) */}
+          {!isEditing && (
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <span className="text-[11px] font-semibold text-slate-600 block flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                Template Cepat (Opsional):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => applyTemplate('meeting')}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:border-slate-400 text-[11px] font-medium transition-colors cursor-pointer"
+                >
+                  + Rapat / Standup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyTemplate('development')}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:border-slate-400 text-[11px] font-medium transition-colors cursor-pointer"
+                >
+                  + Pengembangan Fitur
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyTemplate('testing')}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:border-slate-400 text-[11px] font-medium transition-colors cursor-pointer"
+                >
+                  + Uji Kasus / Testing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyTemplate('incident')}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:border-slate-400 text-[11px] font-medium transition-colors cursor-pointer"
+                >
+                  + Investigasi Bug / Issue
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Validation Alert */}
           {validationError && (
-            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-2">
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-2 animate-shake">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span className="font-medium text-xs">{validationError}</span>
             </div>
@@ -180,7 +265,7 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
                 required
                 value={tanggal}
                 onChange={(e) => setTanggal(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900 transition-colors"
               />
             </div>
 
@@ -194,7 +279,7 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
                 aria-label="Pilih Kategori Aktivitas"
                 value={kategori}
                 onChange={(e) => setKategori(e.target.value as LogbookCategory)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900 transition-colors"
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -216,7 +301,7 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
               placeholder="Contoh: UAT Testing Modul Manajemen Logbook"
               value={judul}
               onChange={(e) => setJudul(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900 transition-colors"
             />
           </div>
 
@@ -230,7 +315,7 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
               aria-label="Pilih Status Logbook"
               value={status}
               onChange={(e) => setStatus(e.target.value as LogbookStatus)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900 transition-colors"
             >
               {statuses.map((st) => (
                 <option key={st} value={st}>
@@ -243,18 +328,27 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
             </p>
           </div>
 
-          {/* Deskripsi */}
+          {/* Deskripsi with Live Character Counter */}
           <div>
-            <label className="block font-semibold text-slate-800 mb-1">
-              Deskripsi Aktivitas <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-semibold text-slate-800">
+                Deskripsi Aktivitas <span className="text-rose-500">*</span>
+              </label>
+              <span
+                className={`text-[11px] font-mono ${
+                  charCount > 30 ? 'text-emerald-600 font-bold' : 'text-slate-400'
+                }`}
+              >
+                {charCount} karakter
+              </span>
+            </div>
             <textarea
               required
               rows={4}
               placeholder="Jelaskan secara detail pekerjaan yang telah dilakukan, hasil yang dicapai, atau progres teknis..."
               value={deskripsi}
               onChange={(e) => setDeskripsi(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900 leading-relaxed"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900 leading-relaxed transition-colors"
             />
           </div>
 
@@ -264,9 +358,9 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
               Attachment / Dokumen Pendukung (Opsional)
             </label>
             {attachment ? (
-              <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="p-2 rounded-md bg-blue-100 text-blue-700">
+                  <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
                     <Paperclip className="w-4 h-4" />
                   </div>
                   <div className="overflow-hidden text-xs">
@@ -278,7 +372,7 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
                   type="button"
                   onClick={handleRemoveAttachment}
                   title="Hapus Attachment"
-                  className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors"
+                  className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -310,25 +404,31 @@ export const LogbookFormModal: React.FC<FormModalProps> = ({
               placeholder="Tambahkan catatan khusus, informasi kendala, atau referensi tiket..."
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900 transition-colors"
             />
           </div>
 
           {/* Footer Buttons */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold shadow-xs transition-colors cursor-pointer"
-            >
-              {isEditing ? 'Simpan Perubahan' : 'Simpan Logbook'}
-            </button>
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[11px] text-slate-400 hidden sm:inline">
+              Tip: Tekan <kbd className="px-1.5 py-0.5 bg-slate-100 rounded border text-slate-600 font-mono">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 bg-slate-100 rounded border text-slate-600 font-mono">Enter</kbd> untuk menyimpan cepat.
+            </span>
+
+            <div className="flex items-center gap-2.5 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold shadow-xs transition-transform active:scale-98 cursor-pointer"
+              >
+                {isEditing ? 'Simpan Perubahan' : 'Simpan Logbook'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
